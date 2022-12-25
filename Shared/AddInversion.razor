@@ -1,0 +1,86 @@
+﻿@inject IJSRuntime JS
+@inject IInversionServicio inversionService
+@inject ITallerService tallerService
+
+<div class="modal" tabindex="-1" data-backdrop="static" role="dialog" id="taskModal-add">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@ObjetoAdd" OnValidSubmit="@HandleValidSubmit">
+                    <div class="form-group">
+                        <ValidationSummary />
+                        <input type="hidden" @bind-value="@ObjetoAdd.Id" />
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="taskName">Fecha</label>
+                                <InputDate class="form-control" @bind-Value="@ObjetoAdd.Fecha" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="taskName">Descripción</label>
+                                <InputText placeholder="ej: estación de calor" class="form-control" @bind-Value="@ObjetoAdd.Nombre" />
+                            </div>
+                        </div>
+                        <div class="row" style="padding-top:1em">
+                            <div class="col-md-6">
+                                <label for="taskName">Cantidad</label>
+                                <InputNumber class="form-control" @bind-Value="@ObjetoAdd.Cantidad" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="taskName">Costo Total</label>
+                                <InputNumber class="form-control" @bind-Value="@ObjetoAdd.Costo" />
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Agregar</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <DataAnnotationsValidator />
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    [Parameter]
+    public ModeloInversion ObjetoAdd { get; set; }
+
+    [Parameter]
+    public Action DataChanged { get; set; }
+
+    [Parameter]
+    public string Token { get; set; } = "";
+
+    private async Task CloseTaskModal()
+    {
+        await JS.InvokeAsync<object>("CloseModal", "taskModal-add");
+    }
+
+    private async Task<bool> ActualizarTaller()
+    {
+        var resp = await tallerService.RestarBalance(ObjetoAdd.Costo, Token);
+        if (resp.ToString().Contains("Bad"))
+            return false;
+
+        return true;
+    }
+
+    private async void HandleValidSubmit()
+    {
+        if (!await ActualizarTaller())
+        {
+            await JS.MostrarMensaje("Error", "El Fondo es insuficiente", IJSExtensions.TipoMensajeSweetAlert.error);
+            return;
+        }
+        await inversionService.Add(ObjetoAdd, Token);
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+}

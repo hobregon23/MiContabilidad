@@ -1,0 +1,83 @@
+﻿@page "/admin"
+@inject IOpcionesAdminService adminService
+@inject IJSRuntime JS
+@attribute [Authorize(Roles = "Admin")]
+
+<div class="container space-1">
+    <EditForm class="w-md-75 w-lg-100 mx-md-auto" Model="adminOptions" OnValidSubmit="Update">
+        <!-- Title -->
+        <div class="mb-4">
+            <h1 class="h3 text-primary font-weight-normal mb-0">Opciones de <span class="font-weight-semi-bold">administración</span></h1>
+            <p>Administra las funciones de la web.</p>
+        </div>
+        <!-- End Title -->
+        <!-- Errors here -->
+        <DataAnnotationsValidator />
+        <!-- End Errors -->
+        <!-- Form Group -->
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-3 w-md-75 w-lg-40 mx-md-auto mb-3 pt-4 pr-5">
+                    <AdminNavPag ItemActive="Finanzas" />
+                </div>
+
+                <div class="col-md-9 w-md-75 w-lg-40 mx-md-auto">
+                    <div class="js-form-message form-group">
+                        <div class="row">
+                            <div style="display: flex; align-items: center">
+                                <label>Adicionar al fondo</label>
+                            </div>
+                            <div class="col-2">
+                                <InputNumber Class="form-control" @bind-Value="@adminOptions.ParteTaller" />
+                            </div>
+                            <div style="display: flex; align-items: center">
+                                <label>$ por cada</label>
+                            </div>
+                            <div class="col-2">
+                                <InputNumber Class="form-control" @bind-Value="@adminOptions.PorCada" />
+                            </div>
+                            <div style="display: flex; align-items: center">
+                                <label>$ de ganancia</label>
+                            </div>
+                        </div>
+                        <ValidationMessage For="@(() => adminOptions.ParteTaller)" />
+                        <ValidationMessage For="@(() => adminOptions.PorCada)" />
+                    </div>
+                    <!-- Button -->
+                    <div style="text-align: right">
+                        <button type="submit" class="btn btn-primary transition-3d-hover">Actualizar</button>
+                    </div>
+                    <!-- End Button -->
+                </div>
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+
+
+@code {
+
+    private OpcionesAdministracion adminOptions { get; set; } = new OpcionesAdministracion();
+    private string Token { get; set; } = "";
+
+    protected async override Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        adminOptions = await adminService.Get();
+        Token = await JS.GetFromLocalStorage("TOKENKEY");
+        StateHasChanged();
+    }
+
+    private async Task Update()
+    {
+        var result = await adminService.Update(adminOptions, Token);
+        if (result.ToString().Contains("Ok"))
+            await JS.MostrarMensaje("Éxito", "Actualizado exitosamente", IJSExtensions.TipoMensajeSweetAlert.success);
+        else if (result.ToString().Contains("Conflict"))
+            await JS.MostrarMensaje("Error", "No tiene los privilegios necesarios", IJSExtensions.TipoMensajeSweetAlert.error);
+        else
+            await JS.MostrarMensaje("Error", "Error! Pruebe otra vez", IJSExtensions.TipoMensajeSweetAlert.error);
+    }
+
+}

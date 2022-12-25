@@ -1,0 +1,29 @@
+﻿@inject CuentasService CuentasService
+@inject IJSRuntime JS
+
+<AuthorizeView>
+    <Authorized>
+        <a href="/editar-cuenta">Hola, @userInfo.Name!</a>
+        <form method="get" action="/salir">
+            <button type="submit" class="nav-link btn btn-link text-danger">Salir</button>
+        </form>
+    </Authorized>
+    <NotAuthorized>
+        <a href="/acceder">Acceder</a>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+
+    [CascadingParameter] protected Task<AuthenticationState> AuthStat { get; set; }
+    private UserInfo userInfo { get; set; } = new UserInfo();
+
+    protected async override Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        var token = await JS.GetFromLocalStorage("TOKENKEY");
+        var username = (await AuthStat).User.Identity.Name;
+        userInfo = await CuentasService.GetUserInfo(username, token);
+    }
+
+}

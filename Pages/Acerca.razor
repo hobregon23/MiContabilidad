@@ -1,0 +1,43 @@
+﻿@page "/acerca-de"
+@attribute [AllowAnonymous]
+
+
+<h3>Acerca del programador</h3>
+
+<div class="col-md-12">
+    <div class="row" style="padding-top:2em">
+        <div class="col-md-4 mb-4 mt-4 transition-3d-hover mx-md-auto">
+            <div class="my-card admin-border-bottom-primary admin-shadow h-100 py-2">
+                <div class="my-card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div style="text-align: center;" class="col mr-2">
+                            <div style="padding-left:2em; padding-bottom: 1em">
+                                <img class="img-thumbnail" src="/imagenes/he.jpg" width="150">
+                            </div>
+                            <div style="padding-left:1em;font-family: 'Arial';">
+                                <strong>Nombre:</strong> Henry Obregón Mena<br>
+                                <strong>Edad:</strong> @(DateTime.Now.Year - 1991)<br>
+                                <strong>Residencia:</strong> Cuba<br>
+                                <strong>WhatsApp:</strong> +53 53604366
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row" style="left:0px; right:0px; bottom:0px; position:fixed">
+    <div style="width:100%; text-align:center">
+        <h6>Copyright © 2022.</h6>
+    </div>
+</div>
+
+
+
+
+@code {
+
+}

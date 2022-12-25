@@ -1,0 +1,138 @@
+﻿@*@page "/registrarse"*@
+@inject NavigationManager navi
+@inject HttpClient http
+@attribute [AllowAnonymous]
+
+
+<div class="main">
+    <div class="content px-4">
+
+
+        <!-- ========== MAIN ========== -->
+        <main id="content" role="main">
+
+            <div class="container space-top-2 space-top-md-3">
+                <!-- ========== MAIN ========== -->
+                <main id="content" role="main">
+                    <!-- Login Form -->
+                    <div class="container space-1">
+                        <EditForm class="w-md-75 w-lg-50 mx-md-auto" Model="userInfo" OnValidSubmit="CreateUser">
+                            <!-- Title -->
+                            <div class="mb-7">
+                                <h2 class="h3 text-primary font-weight-normal mb-0">Nuevo usuario</h2>
+                                <p>Cree un nuevo usuario y comience a administrar su negocio.</p>
+                            </div>
+                            <!-- End Title -->
+                            <!-- Errors here -->
+                            <DataAnnotationsValidator />
+                            <!-- End Errors -->
+                            <!-- Form Group -->
+                            <div class="js-form-message form-group">
+                                <label>Usuario <span style="color:red">*</span></label>
+                                <InputText Class="form-control" @bind-Value="@userInfo.UserName" />
+                                <ValidationMessage For="@(() => userInfo.UserName)" />
+                            </div>
+                            <div class="js-form-message form-group">
+                                <label>Nombre <span style="color:red">*</span></label>
+                                <InputText Class="form-control" @bind-Value="@userInfo.Name" />
+                                <ValidationMessage For="@(() => userInfo.Name)" />
+                            </div>
+                            <div class="js-form-message form-group">
+                                <label>Apellidos <span style="color:red">*</span></label>
+                                <InputText Class="form-control" @bind-Value="@userInfo.LastName" />
+                                <ValidationMessage For="@(() => userInfo.LastName)" />
+                            </div>
+                            <div class="js-form-message form-group">
+                                <label>Correo <span style="color:red">*</span></label>
+                                <InputText Class="form-control" @bind-Value="@userInfo.Email" />
+                                <ValidationMessage For="@(() => userInfo.Email)" />
+                            </div>
+                            <div class="js-form-message form-group">
+                                <label>Contraseña <span style="color:red">*</span></label>
+                                <InputPassword Class="form-control" @bind-Value="@userInfo.Password" />
+                                <ValidationMessage For="@(() => userInfo.Password)" />
+                            </div>
+                            <div class="js-form-message form-group">
+                                <label>Confirmar contraseña <span style="color:red">*</span></label>
+                                <InputPassword Class="form-control" @bind-Value="@userInfo.ConfirmPassword" />
+                                <ValidationMessage For="@(() => userInfo.ConfirmPassword)" />
+                            </div>
+                            <div class="js-form-message form-group">
+                                <label>Teléfono <span style="color:red">*</span></label>
+                                <InputText Class="form-control" @bind-Value="@userInfo.PhoneNumber" />
+                                <ValidationMessage For="@(() => userInfo.PhoneNumber)" />
+                            </div>
+                            <!-- Checkbox -->
+                            <div class="js-form-message mb-5">
+                                <div class="custom-control custom-checkbox d-flex align-items-center text-muted">
+
+                                    <input type="checkbox" class="custom-control-input" id="termsCheckbox" name="agree" required data-msg="Please accept our Terms and Conditions." data-error-class="u-has-error" data-success-class="u-has-success">
+                                    <label class="custom-control-label" for="termsCheckbox">
+                                        <small>
+                                            Estoy de acuerdo con los
+                                            <a class="link-muted" href="/legal">Términos y Condiciones</a>
+                                        </small>
+                                    </label>
+                                </div>
+                            </div>
+                            <!-- End Checkbox -->
+                            @if (HttpResponse.Length > 1)
+                            {
+                                if (HttpResponse.Contains("exitosamente"))
+                                {
+                                    <label class="alert alert-success w-100" style="text-align: center">@HttpResponse</label>
+                                }
+                                else
+                                {
+                                    <label class="alert alert-warning w-100" style="text-align: center">@HttpResponse</label>
+                                }
+                            }
+                            <!-- Button -->
+                            <div class="row align-items-center mb-5">
+                                <div class="col-5 col-sm-6">
+                                    <span class="small text-muted">¿Ya tienes una cuenta?</span>
+                                    <a class="small" href="/acceder">Acceda</a>
+                                </div>
+
+                                <div class="col-7 col-sm-6 text-right">
+                                    <button type="submit" class="btn btn-primary transition-3d-hover">Crear cuenta</button>
+                                </div>
+                            </div>
+                            <!-- End Button -->
+                        </EditForm>
+
+                    </div>
+                    <!-- End Login Form -->
+                </main>
+                <!-- ========== END MAIN ========== -->
+
+            </div>
+
+        </main>
+        <!-- ========== END MAIN CONTENT ========== -->
+
+
+    </div>
+</div>
+
+
+@code {
+
+    private UserInfo userInfo = new UserInfo();
+    private string HttpResponse { get; set; } = "";
+
+    private async Task CreateUser()
+    {
+        try
+        {
+            var result = await http.PostJsonAsync<UserToken>($"{navi.BaseUri}micontabilidadapi/cuentas/create", userInfo);
+            HttpResponse = "Usuario creado exitosamente";
+        }
+        catch
+        {
+            HttpResponse = "Usuario ya existe";
+        }
+    }
+
+}
+

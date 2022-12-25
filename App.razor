@@ -1,0 +1,37 @@
+﻿<Router AppAssembly="@typeof(Program).Assembly">
+    <Found Context="routeData">
+        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+            <NotAuthorized>
+                @if (context.User.Identity.IsAuthenticated)
+                {
+                    <div class="main">
+                        <div class="content px-4">
+                            <h1>Lo sentimos</h1>
+                            <p>Lo sentimos, no hay nada aquí.</p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <RedirectLogin />
+                }
+
+            </NotAuthorized>
+            <Authorizing>
+                <h1>Autenticando...</h1>
+            </Authorizing>
+        </AuthorizeRouteView>
+    </Found>
+    <NotFound>
+        <CascadingAuthenticationState>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <div class="main">
+                    <div class="content px-4">
+                        <h1>Lo sentimos</h1>
+                        <p>Lo sentimos, no hay nada aquí.</p>
+                    </div>
+                </div>
+            </LayoutView>
+        </CascadingAuthenticationState>
+    </NotFound>
+</Router>

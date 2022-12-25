@@ -1,0 +1,96 @@
+﻿@inject IJSRuntime JS
+@inject IInversionServicio inversionService
+@inject ITallerService tallerService
+@inject NavigationManager navi
+
+<div class="modal" tabindex="-1" data-backdrop="static" role="dialog" id="taskModal-edit">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@ObjetoEdit" OnValidSubmit="@HandleValidSubmit">
+                    <div class="form-group">
+                        <ValidationSummary />
+                        <input type="hidden" @bind-value="@ObjetoEdit.Id" />
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="taskName">Fecha</label>
+                                <InputDate class="form-control" @bind-Value="@ObjetoEdit.Fecha" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="taskName">Nombre</label>
+                                <InputText placeholder="ej: estación de calor" class="form-control" @bind-Value="@ObjetoEdit.Nombre" />
+                            </div>
+                        </div>
+                        <div class="row" style="padding-top:1em">
+                            <div class="col-md-6">
+                                <label for="taskName">Cantidad</label>
+                                <InputNumber class="form-control" @bind-Value="@ObjetoEdit.Cantidad" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="taskName">Costo</label>
+                                <InputNumber class="form-control" @bind-Value="@ObjetoEdit.Costo" />
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <DataAnnotationsValidator />
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    [Parameter]
+    public ModeloInversion ObjetoEdit { get; set; }
+
+    [Parameter]
+    public Action DataChanged { get; set; }
+
+    [Parameter]
+    public string Token { get; set; } = "";
+
+    [Parameter]
+    public double CostoOld { get; set; }
+
+    private async Task CloseTaskModal()
+    {
+        await JS.InvokeAsync<object>("CloseModal", "taskModal-edit");
+    }
+
+    private async Task<bool> ActualizarTaller()
+    {
+        if (ObjetoEdit.Costo < CostoOld)
+            await tallerService.AumentarBalance(CostoOld - ObjetoEdit.Costo, Token);
+        else if (ObjetoEdit.Costo > CostoOld)
+        {
+            var resp = await tallerService.RestarBalance(ObjetoEdit.Costo - CostoOld, Token);
+            if (resp.ToString().Contains("Bad"))
+                return false;
+        }
+        return true;
+    }
+
+    private async void HandleValidSubmit()
+    {
+        if (!await ActualizarTaller())
+        {
+            await JS.MostrarMensaje("Error", "El Fondo es insuficiente", IJSExtensions.TipoMensajeSweetAlert.error);
+            return;
+        }
+        await inversionService.Update(ObjetoEdit, Token);
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+        navi.NavigateTo("/inversiones", true);
+    }
+
+}

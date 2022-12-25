@@ -1,0 +1,121 @@
+﻿@page "/admin/crear-usuario"
+@inject IJSRuntime JS
+@inject CuentasService cuentasService
+@attribute [Authorize(Roles = "Admin")]
+
+<div class="container space-1">
+    <div class="mb-4">
+        <h1 class="h3 text-primary font-weight-normal mb-0">Opciones de <span class="font-weight-semi-bold">administración</span></h1>
+        <p>Administra las funciones de la web.</p>
+    </div>
+    <div class="col-md-12">
+        <div class="row">
+            <div class="col-md-3 w-md-75 w-lg-40 mx-md-auto mb-3 pt-4 pr-5">
+                <AdminNavPag ItemActive="Crear usuario" />
+            </div>
+
+            <div class="col-md-9 w-md-75 w-lg-40 mx-md-auto">
+                <EditForm class="w-md-75 w-lg-50 mx-md-auto" Model="userInfo" OnValidSubmit="CreateUser">
+                    <!-- Title -->
+                    <div class="mb-7">
+                        <h2 class="h3 text-primary font-weight-normal mb-0">Nuevo usuario</h2>
+                        <p>Cree un nuevo usuario y comience a administrar su negocio.</p>
+                    </div>
+                    <!-- End Title -->
+                    <!-- Errors here -->
+                    <DataAnnotationsValidator />
+                    <!-- End Errors -->
+                    <!-- Form Group -->
+                    <div class="col-md-12">
+                        <div class="row">
+                            <div class="col-md-6 w-md-75 w-lg-40 mx-md-auto mb-3 pt-4 pr-5">
+                                <div class="js-form-message form-group">
+                                    <label>Usuario <span style="color:red">*</span></label>
+                                    <InputText Class="form-control" @bind-Value="@userInfo.UserName" />
+                                    <ValidationMessage For="@(() => userInfo.UserName)" />
+                                </div>
+                                <div class="js-form-message form-group">
+                                    <label>Nombre <span style="color:red">*</span></label>
+                                    <InputText Class="form-control" @bind-Value="@userInfo.Name" />
+                                    <ValidationMessage For="@(() => userInfo.Name)" />
+                                </div>
+                                <div class="js-form-message form-group">
+                                    <label>Apellidos <span style="color:red">*</span></label>
+                                    <InputText Class="form-control" @bind-Value="@userInfo.LastName" />
+                                    <ValidationMessage For="@(() => userInfo.LastName)" />
+                                </div>
+                                <div class="js-form-message form-group">
+                                    <label>Correo <span style="color:red">*</span></label>
+                                    <InputText Class="form-control" @bind-Value="@userInfo.Email" />
+                                    <ValidationMessage For="@(() => userInfo.Email)" />
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 w-md-75 w-lg-40 mx-md-auto mb-3 pt-4 pr-5">
+                                <div class="js-form-message form-group">
+                                    <label>Contraseña <span style="color:red">*</span></label>
+                                    <InputPassword Class="form-control" @bind-Value="@userInfo.Password" />
+                                    <ValidationMessage For="@(() => userInfo.Password)" />
+                                </div>
+                                <div class="js-form-message form-group">
+                                    <label>Confirmar contraseña <span style="color:red">*</span></label>
+                                    <InputPassword Class="form-control" @bind-Value="@userInfo.ConfirmPassword" />
+                                    <ValidationMessage For="@(() => userInfo.ConfirmPassword)" />
+                                </div>
+                                <div class="js-form-message form-group">
+                                    <label>Teléfono <span style="color:red">*</span></label>
+                                    <InputText Class="form-control" @bind-Value="@userInfo.PhoneNumber" />
+                                    <ValidationMessage For="@(() => userInfo.PhoneNumber)" />
+                                </div>
+                                <div class="js-form-message form-group">
+                                    <label>Rol <span style="color:red">*</span></label>
+                                    <InputSelect Class="form-control" @bind-Value="@userRol">
+                                        <option value="User">Usuario</option>
+                                        <option value="Admin">Administrador</option>
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => userRol)" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Button -->
+                    <div class="row justify-content-end mb-4 mr-4">
+                        <button type="submit" class="btn btn-primary transition-3d-hover">Crear usuario</button>
+                    </div>
+                    <!-- End Button -->
+                </EditForm>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+
+    private UserInfo userInfo = new UserInfo();
+    private string userRol { get; set; } = "User";
+    private string Token { get; set; } = "";
+
+    protected async override Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        Token = await JS.GetFromLocalStorage("TOKENKEY");
+        StateHasChanged();
+    }
+
+    private async Task CreateUser()
+    {
+        try
+        {
+            //var result = await http.PostJsonAsync<UserToken>($"{navi.BaseUri}micontabilidadapi/cuentas/create?rol={userRol}&token={Token}", userInfo);
+            await cuentasService.Add(userInfo, userRol, Token);
+            await JS.MostrarMensaje("Éxito", "Usuario creado exitosamente", IJSExtensions.TipoMensajeSweetAlert.success);
+        }
+        catch
+        {
+            await JS.MostrarMensaje("Error", "Usuario ya existe", IJSExtensions.TipoMensajeSweetAlert.error);
+        }
+    }
+
+}

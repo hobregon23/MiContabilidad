@@ -1,0 +1,18 @@
+﻿<ul class="nav nav-pills flex-column">
+    <li class="nav-item"><a class="nav-link @(Active("Finanzas"))" href="/admin">Finanzas</a></li>
+    <li class="nav-item"><a class="nav-link @(Active("Usuarios"))" href="/admin/usuarios">Usuarios</a></li>
+    <li class="nav-item"><a class="nav-link @(Active("Crear usuario"))" href="/admin/crear-usuario">Crear usuario</a></li>
+    <li class="nav-item"><a class="nav-link @(Active("Fondo"))" href="/admin/editar-fondo">Editar fondo</a></li>
+    <li class="nav-item"><a class="nav-link @(Active("Logs"))" href="/admin/logs">Logs</a></li>
+</ul>
+
+@code{
+
+    [Parameter] public string ItemActive { get; set; } = "";
+
+    private string Active(string item)
+    {
+        return ItemActive.Equals(item) ? "active" : string.Empty;
+    }
+
+}

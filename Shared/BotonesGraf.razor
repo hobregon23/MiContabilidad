@@ -1,0 +1,16 @@
+﻿@inject NavigationManager navi
+
+<input type="button" value="Ganancias" class="btn btn-outline-info" @onclick="(() => Link(links[0]))" />
+<input type="button" value="Inv-Gan" class="btn btn-outline-info" @onclick="(() => Link(links[1]))" />
+@*<input type="button" value="Productos" class="btn btn-outline-info" @onclick="(() => Link(links[2]))" />*@
+
+@code {
+
+    private string[] links = new string[] { "graficas", "graficas/inv-gan", "graficas/productos" };
+
+    private void Link(string args)
+    {
+        navi.NavigateTo(args, true);
+    }
+
+}

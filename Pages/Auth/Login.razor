@@ -1,0 +1,91 @@
+﻿@page "/acceder"
+@inject NavigationManager navi
+@inject ILoginService loginService
+@inject HttpClient http
+@attribute [AllowAnonymous]
+
+
+<div class="main">
+    <div class="content px-4">
+
+
+        <!-- ========== MAIN ========== -->
+        <main id="content" role="main">
+
+            <!-- Login Form -->
+            <div class="container space-top-2 space-top-md-3">
+                <EditForm class="w-md-75 w-lg-50 mx-md-auto" Model="userLogin" OnValidSubmit="LoginUser">
+                    <!-- Title -->
+                    <div class="mb-7">
+                        <h2 class="h3 text-primary font-weight-normal mb-0">Bienvenido</h2>
+                        <p>Acceda para administrar su negocio.</p>
+                    </div>
+                    <!-- End Title -->
+                    <DataAnnotationsValidator />
+
+                    <div class="js-form-message form-group">
+                        <label>Usuario</label>
+                        <InputText Class="form-control" @bind-Value="@userLogin.UserName" />
+                        <ValidationMessage For="@(() => userLogin.UserName)" />
+                    </div>
+                    <div class="js-form-message form-group">
+                        <label>Contraseña</label>
+                        <InputPassword Class="form-control" @bind-Value="@userLogin.Password" />
+                        <ValidationMessage For="@(() => userLogin.Password)" />
+                    </div>
+
+                    @if (BadResponse)
+                    {
+                        <label class="alert alert-warning w-100" style="text-align: center">Credenciales inválidas</label>
+                    }
+
+                    <!-- Button -->
+                    <div class="text-right mb-5">
+                        <button type="submit" class="btn btn-primary transition-3d-hover">Acceder</button>
+                    </div>
+                    <!-- End Button -->
+                </EditForm>
+            </div>
+            <!-- End Login Form -->
+        </main>
+        <!-- ========== END MAIN CONTENT ========== -->
+
+    </div>
+</div>
+
+
+
+
+
+
+
+@code{
+
+    [CascadingParameter] protected Task<AuthenticationState> AuthStat { get; set; }
+    private UserLogin userLogin = new UserLogin();
+    private bool BadResponse { get; set; } = false;
+
+    protected async override Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        var isAuth = (await AuthStat).User.Identity.IsAuthenticated;
+        if (isAuth)
+            navi.NavigateTo("/");
+    }
+
+    private async Task LoginUser()
+    {
+        try
+        {
+            var result = await http.PostJsonAsync<UserToken>($"{navi.BaseUri}micontabilidadapi/login", userLogin);
+            await loginService.Login(result.Token);
+            navi.NavigateTo("/");
+            BadResponse = false;
+        }
+        catch
+        {
+            BadResponse = true;
+        }
+    }
+
+}

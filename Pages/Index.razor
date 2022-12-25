@@ -1,0 +1,222 @@
+﻿@page "/"
+@inject IServiciosServicio serviciosService
+@inject IInventarioServicio inventarioService
+@inject ITallerService tallerService
+
+    <div class="row mb-6">
+        <div class="col-xl-3 col-md-6 mb-4 mt-4 transition-3d-hover">
+            <div class="my-card admin-border-left-primary admin-shadow h-100 py-2">
+                <div class="my-card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs admin-font-weight-bold text-primary text-uppercase mb-1">Ganancia (Hoy)</div>
+                            <div class="h5 mb-0 admin-font-weight-bold admin-text-gray-800">@(((double)gananciaHoy).ToString("C2", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")))</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="oi oi-dollar fa-2x admin-text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4 mt-4 transition-3d-hover">
+            <div class="my-card admin-border-left-info admin-shadow h-100 py-2">
+                <div class="my-card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs admin-font-weight-bold admin-text-info text-uppercase mb-1">Ganancia (Semana)</div>
+                            <div class="h5 mb-0 admin-font-weight-bold admin-text-gray-800">@(((double)gananciaSemana).ToString("C2", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")))</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="oi oi-box fa-2x admin-text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4 mt-4 transition-3d-hover">
+            <div class="my-card admin-border-left-success admin-shadow h-100 py-2">
+                <div class="my-card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs admin-font-weight-bold text-success text-uppercase mb-1">Ganancia (Total)</div>
+                            <div class="h5 mb-0 admin-font-weight-bold admin-text-gray-800">@(((double)gananciaTotal).ToString("C2", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")))</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="oi oi-monitor fa-2x admin-text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4 mt-4 transition-3d-hover">
+            <div class="my-card admin-border-left-danger admin-shadow h-100 py-2">
+                <div class="my-card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs admin-font-weight-bold admin-text-danger text-uppercase mb-1">Fondo</div>
+                            <div class="h5 mb-0 admin-font-weight-bold admin-text-gray-800">@(((double)fondoTaller).ToString("C2", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")))</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="oi oi-box fa-2x admin-text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="my-card-deck d-block d-lg-flex my-card-lg-gutters-3 mb-3">
+        <!-- Stats -->
+        <div class="my-card mb-7 mb-lg-0 admin-shadow">
+            <div class="my-card-body pt-4 pb-5 mb-3 mb-md-0" style="padding-bottom: 0rem !important">
+                <!-- Title & Settings -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="h6 mb-0">Ganancias</h4>
+
+                    <!-- Settings Dropdown -->
+                    <div class="position-relative">
+                    </div>
+                    <!-- End Settings Dropdown -->
+                </div>
+                <!-- End Title & Settings -->
+
+                <hr class="mt-3 mb-4">
+
+                <div class="table-responsive-sm">
+                    <table class="table table-light">
+                        <tbody class="font-size-1" style="font-family: 'Arial Rounded MT'">
+
+                            <RadzenChart>
+                                <RadzenAreaSeries Smooth="true" Data="@tablaGananciasDiario" CategoryProperty="Fecha" Title="@CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(DateTime.Now.Month))" ValueProperty="Ganancia">
+                                    <TooltipTemplate Context="data">
+                                        <div>
+                                            <div>
+                                                @CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CultureInfo.CurrentCulture.DateTimeFormat.GetDayName(data.Fecha.DayOfWeek)) @data.Fecha.Day
+                                            </div>
+                                            <div>
+                                                <strong>@(((double)@data.Ganancia).ToString("C0", CultureInfo.CreateSpecificCulture("en-US")))</strong>
+                                            </div>
+                                        </div>
+                                    </TooltipTemplate>
+                                    <ChildContent>
+                                        <RadzenMarkers MarkerType="MarkerType.Circle" />
+                                    </ChildContent>
+                                </RadzenAreaSeries>
+                                <RadzenCategoryAxis FormatString="{0:dd}" Padding="20">
+                                    <RadzenAxisTitle Text="Día" />
+                                </RadzenCategoryAxis>
+                                <RadzenValueAxis Formatter="@FormatAsUSD">
+                                    <RadzenGridLines Visible="true" />
+                                    <RadzenAxisTitle Text="$" />
+                                </RadzenValueAxis>
+                            </RadzenChart>
+
+                        </tbody>
+                    </table>
+                </div>
+                <!-- End Deposit Info -->
+            </div>
+        </div>
+        <!-- End Stats -->
+    </div>
+    <div class="my-card-deck d-block d-lg-flex my-card-lg-gutters-3 mb-3">
+        <div class="my-card mb-7 mb-lg-0 admin-shadow">
+            <div class="my-card-body pt-4 pb-5 mb-3 mb-md-0" style="padding-bottom: 0rem !important">
+                <!-- Title & Settings -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="h6 mb-0">Top 10 productos (cantidad)</h4>
+
+                    <!-- Settings Dropdown -->
+                    <div class="position-relative">
+                    </div>
+                    <!-- End Settings Dropdown -->
+                </div>
+                <!-- End Title & Settings -->
+
+                <hr class="mt-3 mb-4">
+
+                @if (tablaInventario.Count.Equals(0))
+                {
+                    <div style="margin-top: 4rem !important">
+                        <p class="text-danger" style="text-align: center">N/A</p>
+                    </div>
+                }
+                else
+                {
+                    <RadzenChart>
+                        <RadzenPieSeries Data="@tablaInventario" CategoryProperty="Nombre" Title="Cant." ValueProperty="Cantidad" />
+                    </RadzenChart>
+                }
+
+                <br>
+            </div>
+        </div>
+    </div>
+
+
+
+
+@code{
+
+    private List<TablaGanancias> tablaGananciasDiario { get; set; } = new List<TablaGanancias>();
+    private List<TablaGanancias> tablaGananciasGeneral { get; set; } = new List<TablaGanancias>();
+    private List<DataItemInventario> tablaInventario { get; set; } = new List<DataItemInventario>();
+    private string tipoChart { get; set; } = "lineal";
+    private double gananciaHoy { get; set; }
+    private double gananciaSemana { get; set; }
+    private double gananciaTotal { get; set; }
+    private double fondoTaller { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadItems();
+    }
+
+    async Task LoadItems()
+    {
+        //area chart
+        tablaGananciasDiario = await serviciosService.GetServicioByDate("diario");
+
+        //pie chart
+        var listaInventario = await inventarioService.GetTop10Cant();
+        foreach (var item in listaInventario)
+        {
+            var tempI = new DataItemInventario()
+            {
+                Nombre = item.NombreCategoria + ".-" + item.NombreMarca,
+                Cantidad = item.Cantidad
+            };
+            tablaInventario.Add(tempI);
+        }
+        await GetGanancias();
+    }
+
+    private async Task GetGanancias()
+    {
+        tablaGananciasGeneral = await serviciosService.GetServicioByDate("general");
+        var listadoHoy = await serviciosService.GetHoy();
+        gananciaHoy = listadoHoy.Sum(x => x.GananciaNeta);
+        var dia0 = DateTime.Now.Subtract(new TimeSpan((int)DateTime.Now.DayOfWeek, 0, 0, 0));
+        gananciaSemana = tablaGananciasGeneral.Where(x => x.Fecha.CompareTo(dia0) > 0).ToArray().Sum(x => x.Ganancia);
+        gananciaTotal = tablaGananciasGeneral.Sum(x => x.Ganancia);
+        fondoTaller = (await tallerService.Get()).Balance;
+    }
+
+    private void CambiarChart(string nombre)
+    {
+        tipoChart = nombre;
+    }
+
+    string FormatAsUSD(object value)
+    {
+        return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("en-US"));
+    }
+
+    class DataItemInventario
+    {
+        public string Nombre { get; set; }
+        public int Cantidad { get; set; }
+    }
+
+}
+

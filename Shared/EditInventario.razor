@@ -1,0 +1,188 @@
+﻿@inject IJSRuntime JS
+@inject IInventarioServicio inventarioService
+@inject ITallerService tallerService
+@inject NavigationManager navi
+
+<div class="modal" tabindex="-1" data-backdrop="static" role="dialog" id="taskModal-edit">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@ObjetoProd" OnValidSubmit="@HandleValidSubmit">
+                    <div class="form-group">
+                        <ValidationSummary />
+                        <input type="hidden" @bind-value="@ObjetoProd.Id" />
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="taskName">Categoría</label>
+                                <select class="form-control" style="font-weight:bold" @bind="@CatIdString" required>
+                                    @foreach (var item in Categorias)
+                                    {
+                                        <option value="@item.Id">
+                                            @item.Nombre
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="taskName">Marca</label>
+                                <select class="form-control" style="font-weight:bold" @bind="@MarcaIdString" required>
+                                    @foreach (var item in Marcas)
+                                    {
+                                        <option value="@item.Id">
+                                            @item.Nombre
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row" style="padding-top:1em">
+                            <div class="col-md-6">
+                                <label for="taskName">Modelo</label>
+                                <select class="form-control" style="font-weight:bold" @bind="@ModeloIdString" required>
+                                    @foreach (var item in modelosXmarca)
+                                    {
+                                        <option value="@item.Id">
+                                            @item.Nombre
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="taskName">Fecha</label>
+                                <InputDate class="form-control" @bind-Value="@ObjetoProd.Fecha" />
+                            </div>
+                        </div>
+                        <div class="row" style="padding-top:1em">
+                            <div class="col-md-6">
+                                <label for="taskName">Cantidad</label>
+                                <InputNumber class="form-control" @bind-Value="@ObjetoProd.Cantidad" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="taskName">Costo</label>
+                                <InputNumber class="form-control" @bind-Value="@ObjetoProd.Costo" />
+                            </div>
+                        </div>
+                        <label style="padding-top:1em" for="taskName">Descripción</label>
+                        <InputText class="form-control" @bind-Value="@ObjetoProd.Descripcion" />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <DataAnnotationsValidator />
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    [Parameter]
+    public Producto ObjetoProd { get; set; }
+
+    [Parameter]
+    public Action DataChanged { get; set; }
+
+    [Parameter]
+    public List<Modelo> Modelos { get; set; }
+
+    [Parameter]
+    public List<Marca> Marcas { get; set; }
+
+    [Parameter]
+    public List<Categoria> Categorias { get; set; }
+
+    [Parameter]
+    public double CostoOld { get; set; }
+
+    [Parameter]
+    public string Token { get; set; } = "";
+
+    List<Modelo> modelosXmarca { get; set; } = new List<Modelo>();
+
+    public string CatIdString
+    {
+        get
+        {
+            return ObjetoProd.CategoriaId.ToString();
+        }
+        set
+        {
+            ObjetoProd.CategoriaId = int.Parse(value);
+        }
+    }
+
+    public string MarcaIdString
+    {
+        get
+        {
+            return ObjetoProd.MarcaId.ToString();
+        }
+        set
+        {
+            ObjetoProd.MarcaId = int.Parse(value);
+            modelosXmarca = Modelos.Where(x => x.MarcaId.Equals(ObjetoProd.MarcaId)).ToList();
+            try
+            {
+                ObjetoProd.ModeloId = modelosXmarca.First().Id;
+            }
+            catch
+            {
+                //
+            }
+
+        }
+    }
+
+    public string ModeloIdString
+    {
+        get
+        {
+            modelosXmarca = Modelos.Where(x => x.MarcaId.Equals(ObjetoProd.MarcaId)).ToList();
+            return ObjetoProd.ModeloId.ToString();
+        }
+        set
+        {
+            ObjetoProd.ModeloId = int.Parse(value);
+        }
+    }
+
+    private async Task CloseTaskModal()
+    {
+        await JS.InvokeAsync<object>("CloseModal", "taskModal-edit");
+    }
+
+    private async Task<bool> ActualizarTaller()
+    {
+        var costoTotal = ObjetoProd.Costo * ObjetoProd.Cantidad;
+        if (costoTotal < CostoOld)
+            await tallerService.AumentarBalance(CostoOld - costoTotal, Token);
+        else if (costoTotal > CostoOld)
+        {
+            var resp = await tallerService.RestarBalance(costoTotal - CostoOld, Token);
+            if (resp.ToString().Contains("Bad"))
+                return false;
+        }
+        return true;
+    }
+
+    private async void HandleValidSubmit()
+    {
+        if (!await ActualizarTaller())
+        {
+            await JS.MostrarMensaje("Error", "El Fondo es insuficiente", IJSExtensions.TipoMensajeSweetAlert.error);
+            return;
+        }
+        await inventarioService.Update(ObjetoProd, Token);
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+        navi.NavigateTo("/almacen", true);
+    }
+
+}

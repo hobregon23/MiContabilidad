@@ -1,0 +1,18 @@
+﻿@inject JwtAuthService _jwtAuthService
+@inject IJSRuntime JS
+@inject NavigationManager navi
+
+@code {
+
+    [Parameter] public List<string> Roles { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        var token = await JS.GetFromLocalStorage("TOKENKEY");
+        if (!await _jwtAuthService.IsAuthorized(token, Roles))
+        {
+            navi.NavigateTo("/salir", true);
+        }
+    }
+
+}

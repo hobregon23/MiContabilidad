@@ -1,0 +1,227 @@
+﻿@page "/almacen"
+@inject IJSRuntime JS
+@inject IInventarioServicio invService
+@inject ICategoriasServicio serviceCat
+@inject IMarcasServicio marcaServicio
+@inject IModelosServicio modeloServicio
+@inject NavigationManager navi
+@inject ITallerService tallerService
+
+<div class="row" style="position:relative">
+    <div class="ml-4">
+        <h1>Almacén</h1>
+    </div>
+    <div class="row" style="margin-left:auto; margin-right:5%">
+        <div>
+            <MultiTask @ref="multi" Eliminar="(() => EliminarMultiple())"></MultiTask>
+        </div>
+        <div style="padding-left:3em">
+            <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-soft-primary transition-3d-hover" value="Añadir" @onclick="(() => InicializarObjetoAddProd())" />
+        </div>
+        <div style="padding-left:2em">
+            <FormBuscar objetoBuscar="@objetoBuscar" OnValidSubmit="(() => Buscar(objetoBuscar.Texto))"></FormBuscar>
+        </div>
+    </div>
+</div>
+<hr />
+
+
+<div class="row">
+    <div class="row col-lg-12" style="padding-left:2em">
+
+        <div class="table-responsive-sm w-100">
+
+            @if (productos == null || productos.Count.Equals(0))
+            {
+                <p class="text-danger" style="font-family: 'Arial Rounded MT'; text-align: center">N/A</p>
+            }
+            else
+            {
+                <table class="table table-light">
+                    <thead>
+                        <tr style="font-size: small; color: white; background-image: linear-gradient(182deg, rgb(8, 38, 123) 0%, #4f1056 90%);">
+                            <th></th>
+                            <th><span style="cursor:pointer" @onclick="@(() => Ordenar("Fecha"))">Fecha </span><i class="@(IndicadorOrden("Fecha"))"></i></th>
+                            <th>Categoría</th>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th><span style="cursor:pointer" @onclick="@(() => Ordenar("Cantidad"))">Cantidad </span><i class="@(IndicadorOrden("Cantidad"))"></i></th>
+                            <th><span style="cursor:pointer" @onclick="@(() => Ordenar("Costo"))">Costo (unidad) </span><i class="@(IndicadorOrden("Costo"))"></i></th>
+                            <th>Descripción</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody class="font-size-1" style="font-family: 'Arial Rounded MT'">
+                        @foreach (var item in productos)
+                        {
+                            <tr class="my-transition-3d-hover">
+                                <td><input name="AreChecked" type="checkbox" value="@item" @onchange="eventArgs => { CHBCheckChanged(item, eventArgs.Value);}" /></td>
+                                <td class="align-middle"><a style="color: #575d5d; font-size: small">@String.Format("{0:dd/MM/yyyy}", item.Fecha)</a></td>
+                                <td class="align-middle"><a class="text-info" style="font-size: small">@categorias.Where(x => x.Id.Equals(item.CategoriaId)).ToList()[0].Nombre</a></td>
+                                <td class="align-middle"><a class="text-info" style="font-size: small">@marcas.Where(x => x.Id.Equals(item.MarcaId)).ToList()[0].Nombre</a></td>
+                                <td class="align-middle"><a class="text-info" style="font-size: small">@modelos.Where(x => x.Id.Equals(item.ModeloId)).ToList()[0].Nombre</a></td>
+                                <td class="align-middle"><a class="text-danger" style="font-size: small">@item.Cantidad</a></td>
+                                <td class="align-middle"><a class="text-success" style="font-size: small">@item.Costo</a></td>
+                                <td class="align-middle"><a style="color: #424444; font-size: small">@item.Descripcion</a></td>
+                                <td>
+                                    <div>
+                                        <mark data-toggle="modal" data-target="#taskModal-edit" @onclick="(() => InicializarObjetoEditProd(item.Id))" class="bg-primary" style="cursor:pointer; border-radius:20px 20px 20px 20px; padding-left:5px; color:white"><span class="oi oi-pencil" aria-hidden="true"></span></mark>
+                                        <mark @onclick="(() => Eliminar(item.Id))" class="bg-danger" style="cursor:pointer; border-radius:20px 20px 20px 20px; padding-left:5px; color:white"><span class="oi oi-trash" aria-hidden="true"></span></mark>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+<AddInventario ObjetoAddProd="objetoAddProd" DataChanged="@DataChanged" Categorias="categorias" Marcas="marcas" Modelos="modelos" Token="@Token" />
+<EditInventario ObjetoProd="objetoEditProd" DataChanged="@DataChanged" Categorias="categorias" Marcas="marcas" Modelos="modelos" CostoOld="@(objetoEditProd.Costo*objetoEditProd.Cantidad)" Token="@Token" />
+<Paginacion TotaPagesQuantity="totalPageQuantity" CurrentPage="currentPage" Radius="3" SelectedPage="SelectedPage"></Paginacion>
+
+@code {
+
+    private int totalPageQuantity;
+    private int currentPage = 1;
+    string campoSorteoActual = "Fecha";
+    string ordenSorteoActual = "Desc";
+    private string Token { get; set; } = "";
+
+    public MultiTask multi;
+    private List<Producto> ListadoEliminar { get; set; } = new List<Producto>();
+
+    List<Categoria> categorias = new List<Categoria>();
+    List<Marca> marcas = new List<Marca>();
+    List<Modelo> modelos = new List<Modelo>();
+
+    List<Producto> productos { get; set; } = new List<Producto>();
+    Producto objetoAddProd = new Producto();
+    Producto objetoEditProd = new Producto();
+    Buscar objetoBuscar { get; set; } = new Buscar();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Token = await JS.GetFromLocalStorage("TOKENKEY");
+        await LoadItems();
+        categorias = await serviceCat.Get();
+        marcas = await marcaServicio.Get();
+        modelos = await modeloServicio.Get();
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        currentPage = page;
+        if (string.IsNullOrEmpty(objetoBuscar.Texto))
+        {
+            await LoadItems(page);
+        }
+        else
+        {
+            await Buscar(objetoBuscar.Texto, page);
+        }
+    }
+
+    private string IndicadorOrden(string campoSorteo)
+    {
+        if (campoSorteo.Equals(campoSorteoActual))
+        {
+            return ordenSorteoActual.Equals("Asc") ? "oi oi-arrow-top" : "oi oi-arrow-bottom";
+        }
+        return string.Empty;
+    }
+
+    private async Task Ordenar(string campoSorteo)
+    {
+        if (campoSorteo.Equals(campoSorteoActual))
+        {
+            ordenSorteoActual = ordenSorteoActual.Equals("Asc") ? "Desc" : "Asc";
+        }
+        else
+        {
+            campoSorteoActual = campoSorteo;
+            ordenSorteoActual = "Asc";
+        }
+        await LoadItems(1, 5, campoSorteoActual, ordenSorteoActual);
+    }
+
+    async Task LoadItems(int page = 1, int quantityPerPage = 5, string campoSorteo = "Fecha", string ordenSorteo = "Desc")
+    {
+        totalPageQuantity = (await invService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, string.Empty, campoSorteo, ordenSorteo)).CantPorPag;
+        productos = (await invService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, string.Empty, campoSorteo, ordenSorteo)).ListaObjetos.ToList();
+    }
+
+    private async Task Eliminar(int id)
+    {
+        var proSeleccionado = productos.First(x => x.Id == id);
+        if (await JS.Confirm("Eliminar", "Esta acción no es retornable"))
+        {
+            await tallerService.AumentarBalance(proSeleccionado.Costo * proSeleccionado.Cantidad, Token);
+            await invService.Delete(id, Token);
+        }
+        await LoadItems(currentPage);
+    }
+
+    private void InicializarObjetoAddProd()
+    {
+        objetoAddProd = new Producto();
+        objetoAddProd.Fecha = DateTime.Now;
+    }
+
+    private void InicializarObjetoEditProd(int id)
+    {
+        var objedit = productos.First(x => x.Id == id);
+        objetoEditProd = new Producto() { Id = objedit.Id, Fecha = objedit.Fecha, Cantidad = objedit.Cantidad, Costo = objedit.Costo, Categoria = objedit.Categoria, CategoriaId = objedit.CategoriaId, Descripcion = objedit.Descripcion, Marca = objedit.Marca, MarcaId = objedit.MarcaId, ModeloId = objedit.ModeloId };
+    }
+
+    private async void DataChanged()
+    {
+        await LoadItems(currentPage);
+        categorias = await serviceCat.Get();
+        StateHasChanged();
+    }
+
+    private async Task Buscar(string texto, int page = 1)
+    {
+        int quantityPerPage = 5;
+        totalPageQuantity = (await invService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, texto, "Fecha", "Desc")).CantPorPag;
+        productos = (await invService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, texto, "Fecha", "Desc")).ListaObjetos.ToList();
+    }
+
+    private async Task EliminarMultiple()
+    {
+        if (ListadoEliminar.Count > 0)
+        {
+            if (await JS.Confirm("Eliminar", "Esta acción no es retornable"))
+            {
+                await tallerService.AumentarBalanceMultiple(ListadoEliminar, null, Token);
+                await invService.DeleteMultiple(ListadoEliminar, Token);
+                ListadoEliminar.Clear();
+                navi.NavigateTo("/almacen", true);
+            }
+            await LoadItems(currentPage);
+        }
+    }
+
+    private async Task CHBCheckChanged(Producto item, object checkValue)
+    {
+        if ((bool)checkValue)
+        {
+            ListadoEliminar.Add(item);
+        }
+        else
+        {
+            ListadoEliminar.Remove(item);
+        }
+        if (ListadoEliminar.Count > 0)
+        {
+            multi.Activate();
+        }
+        else
+        {
+            multi.Deactivate();
+        }
+    }
+}

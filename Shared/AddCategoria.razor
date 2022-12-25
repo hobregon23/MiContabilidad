@@ -1,0 +1,66 @@
+﻿@inject IJSRuntime JS
+@inject ICategoriasServicio categoriasService
+
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@ObjetoAdd" OnValidSubmit="@HandleValidSubmit">
+                    <div class="form-group">
+                        <ValidationSummary />
+                        <label for="taskName">Nombre</label>
+                        <input type="hidden" @bind-value="@ObjetoAdd.Id" />
+                        <InputText placeholder="ej: display" id="name" class="form-control" @bind-Value="@ObjetoAdd.Nombre" />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Agregar</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <DataAnnotationsValidator />
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    [Parameter]
+    public Categoria ObjetoAdd { get; set; }
+
+    [Parameter]
+    public List<Categoria> ListCats { get; set; }
+
+    [Parameter]
+    public Action DataChanged { get; set; }
+
+    [Parameter]
+    public string Token { get; set; } = "";
+
+    private async Task CloseTaskModal()
+    {
+        await JS.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+    private async void HandleValidSubmit()
+    {
+        var marca = ListCats.Where(x => x.Nombre == ObjetoAdd.Nombre).ToList();
+        if (marca.Count != 0)
+        {
+            await JS.MostrarMensaje("Error", $"{ObjetoAdd.Nombre} ya existe.", IJSExtensions.TipoMensajeSweetAlert.error);
+        }
+        else
+        {
+            await categoriasService.Add(ObjetoAdd, Token);
+            await CloseTaskModal();
+            DataChanged?.Invoke();
+        }
+    }
+
+}

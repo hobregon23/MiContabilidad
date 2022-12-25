@@ -1,0 +1,114 @@
+﻿@page "/graficas/inv-gan"
+@using Radzen.Blazor
+@inject IJSRuntime JS
+@inject IServiciosServicio serviciosService
+@inject IInversionServicio inversionService
+@inject IInventarioServicio inventarioService
+
+<div class="row">
+    <div>
+        <h3>Gráficas</h3>
+    </div>
+    <div style="padding-left:2em">
+        @*<input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Agregar" @onclick="(() => InicializarObjetoAddCat())" />*@
+    </div>
+</div>
+<hr />
+<div class="row">
+
+    <div class="col-md-12">
+        <div style="text-align:center">
+            <label style="font-weight:bold">Ganancia vs Inversión</label>
+        </div>
+        <div style="font-family: 'Arial Rounded MT'">
+            @if (ValoresGanancia.Count.Equals(0))
+            {
+                <div style="margin-top: 4rem !important">
+                    <p class="text-danger" style="text-align: center">N/A</p>
+                </div>
+            }
+            else
+            {
+                <RadzenChart>
+                    <RadzenColumnSeries Data="@ValoresGanancia" CategoryProperty="Nombre" Title="Ganancia" ValueProperty="GananciaTotal">
+                        <RadzenMarkers MarkerType="MarkerType.Circle" />
+                    </RadzenColumnSeries>
+                    <RadzenColumnSeries Data="@ValoresInversion" CategoryProperty="Nombre" Title="Inversión" ValueProperty="InversionTotal">
+                        <RadzenMarkers MarkerType="MarkerType.Triangle" />
+                    </RadzenColumnSeries>
+                    <RadzenColumnOptions Margin="12" Radius="5" />
+                    <RadzenValueAxis Formatter="@FormatAsUSD">
+                        <RadzenGridLines Visible="true" />
+                        <RadzenAxisTitle Text="$" />
+                    </RadzenValueAxis>
+                </RadzenChart>
+            }
+
+        </div>
+        <div style="text-align:center; padding-top:3em">
+            <BotonesGraf />
+        </div>
+    </div>
+</div>
+@code {
+
+    private List<DataItemGanancia> ValoresGanancia { get; set; } = new List<DataItemGanancia>();
+    private List<DataItemInversion> ValoresInversion { get; set; } = new List<DataItemInversion>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadItems();
+    }
+
+    async Task LoadItems()
+    {
+        //cargar ganacia
+        var listaGanancias = await serviciosService.GetServicioByDate("algo");
+        DataItemGanancia tempG = new DataItemGanancia();
+        if (listaGanancias.Count > 0)
+        {
+            foreach (var item in listaGanancias)
+            {
+                tempG.GananciaTotal += item.Ganancia;
+            }
+            ValoresGanancia.Add(tempG);
+        }
+
+        //cargar inversion
+        var listaInversiones = await inversionService.Get();
+        DataItemInversion tempI = new DataItemInversion();
+        tempI.InversionTotal = await inventarioService.GetCantInvertida();
+        if (listaInversiones.Count > 0)
+        {
+            foreach (var item in listaInversiones)
+            {
+                tempI.InversionTotal += item.Costo;
+            }
+            ValoresInversion.Add(tempI);
+        }
+    }
+
+
+
+
+
+
+
+    //chart
+    class DataItemGanancia
+    {
+        public string Nombre { get; set; }
+        public double GananciaTotal { get; set; }
+    }
+
+    class DataItemInversion
+    {
+        public string Nombre { get; set; }
+        public double InversionTotal { get; set; }
+    }
+
+    string FormatAsUSD(object value)
+    {
+        return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("en-US"));
+    }
+}

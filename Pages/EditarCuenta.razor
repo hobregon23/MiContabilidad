@@ -1,0 +1,122 @@
+﻿@page "/editar-cuenta"
+@inject CuentasService cuentasService
+@inject IJSRuntime JS
+
+<div class="main">
+    <div class="content px-4">
+
+        <!-- ========== MAIN ========== -->
+        <main id="content" role="main">
+
+            <!-- Login Form -->
+            <div class="container space-1">
+                <EditForm class="w-md-75 w-lg-100 mx-md-auto" Model="userUpdate" OnValidSubmit="updateAccount">
+                    <!-- Title -->
+                    <div class="mb-7">
+                        <h1 class="h3 text-primary font-weight-normal mb-0">Edita tu <span class="font-weight-semi-bold">cuenta</span></h1>
+                        <p>Actualiza los datos de tu cuenta.</p>
+                    </div>
+                    <!-- End Title -->
+                    <!-- Errors here -->
+                    <DataAnnotationsValidator />
+                    <!-- End Errors -->
+                    <!-- Form Group -->
+                    <div class="col-md-12">
+                        <div class="row">
+                            <div class="col-md-5 w-md-75 w-lg-40 mx-md-auto">
+                                <div class="js-form-message form-group">
+                                    <label>Usuario</label>
+                                    <InputText Class="form-control" style="background-color:lightgray" disabled @bind-Value="@userUpdate.UserName" />
+                                    <ValidationMessage For="@(() => userUpdate.UserName)" />
+                                </div>
+                                <div class="js-form-message form-group">
+                                    <label>Nombre</label>
+                                    <InputText Class="form-control" style="background-color:lightgray" disabled @bind-Value="@userUpdate.Name" />
+                                    <ValidationMessage For="@(() => userUpdate.Name)" />
+                                </div>
+                                <div class="js-form-message form-group">
+                                    <label>Apellidos</label>
+                                    <InputText Class="form-control" style="background-color:lightgray" disabled @bind-Value="@userUpdate.LastName" />
+                                    <ValidationMessage For="@(() => userUpdate.LastName)" />
+                                </div>
+                                <div class="js-form-message form-group">
+                                    <label>Correo <span style="color:red">*</span></label>
+                                    <InputText Class="form-control" @bind-Value="@userUpdate.Email" />
+                                    <ValidationMessage For="@(() => userUpdate.Email)" />
+                                </div>
+                            </div>
+
+                            <div class="col-md-5 w-md-75 w-lg-40 mx-md-auto">
+                                <div class="js-form-message form-group">
+                                    <label>Teléfono <span style="color:red">*</span></label>
+                                    <InputText Class="form-control" @bind-Value="@userUpdate.PhoneNumber" />
+                                    <ValidationMessage For="@(() => userUpdate.PhoneNumber)" />
+                                </div>
+                                <div class="js-form-message form-group">
+                                    <label>Contraseña Anterior <span style="color:red">*</span></label>
+                                    <InputPassword Class="form-control" @bind-Value="@userUpdate.OldPassword" />
+                                    <ValidationMessage For="@(() => userUpdate.OldPassword)" />
+                                </div>
+                                <div class="js-form-message form-group">
+                                    <label>Nueva Contraseña</label>
+                                    <InputPassword Class="form-control" @bind-Value="@userUpdate.NewPassword" />
+                                    <ValidationMessage For="@(() => userUpdate.NewPassword)" />
+                                </div>
+                                <div class="js-form-message form-group">
+                                    <label>Confirmar Nueva Contraseña</label>
+                                    <InputPassword Class="form-control" @bind-Value="@userUpdate.ConfirmNewPassword" />
+                                    <ValidationMessage For="@(() => userUpdate.ConfirmNewPassword)" />
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Button -->
+                    <div class="w-100" style="text-align: right">
+                        <button type="submit" class="btn btn-primary transition-3d-hover">Actualizar</button>
+                    </div>
+                    <!-- End Button -->
+                </EditForm>
+            </div>
+            <!-- End Login Form -->
+        </main>
+        <!-- ========== END MAIN CONTENT ========== -->
+
+    </div>
+</div>
+
+
+
+@code {
+
+    private UserUpdate userUpdate = new UserUpdate();
+    [CascadingParameter] protected Task<AuthenticationState> AuthStat { get; set; }
+    private string Token { get; set; } = "";
+
+    protected async override Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        Token = await JS.GetFromLocalStorage("TOKENKEY");
+        var username = (await AuthStat).User.Identity.Name;
+        var userInfo = await cuentasService.GetUserInfo(username, Token);
+        userUpdate.UserName = userInfo.UserName;
+        userUpdate.Name = userInfo.Name;
+        userUpdate.LastName = userInfo.LastName;
+        userUpdate.Email = userInfo.Email;
+        userUpdate.PhoneNumber = userInfo.PhoneNumber;
+        StateHasChanged();
+    }
+
+    private async Task updateAccount()
+    {
+        var result = await cuentasService.ActualizarCuenta(Token, userUpdate);
+        if (result.ToString().Contains("Ok"))
+            await JS.MostrarMensaje("Éxito", "Cuenta actualizada exitosamente", IJSExtensions.TipoMensajeSweetAlert.success);
+        else if (result.ToString().Contains("Conflict"))
+            await JS.MostrarMensaje("Error", "Contraseña anterior incorrecta", IJSExtensions.TipoMensajeSweetAlert.error);
+        else
+            await JS.MostrarMensaje("Error", "Error! Pruebe otra vez", IJSExtensions.TipoMensajeSweetAlert.error);
+    }
+
+}

@@ -1,0 +1,283 @@
+﻿@page "/servicios"
+@inject IJSRuntime JS
+@inject NavigationManager navi
+@inject IServiciosServicio serviciosService
+@inject ITallerService tallerService
+@inject IInventarioServicio inventarioService
+
+    <div class="row" style="position:relative">
+        <div class="ml-4">
+            <h1>Servicios</h1>
+        </div>
+        <div class="row" style="margin-left:auto; margin-right:5%">
+            <div>
+                <MultiTask @ref="multi" Eliminar="(() => EliminarMultiple())"></MultiTask>
+            </div>
+            <div style="padding-left:3em">
+                <input type="button" class="btn btn-soft-primary transition-3d-hover" value="Añadir" @onclick="@(() => Link("/servicios/añadir-servicio"))" />
+            </div>
+            <div style="padding-left:2em">
+                <FormBuscar objetoBuscar="@objetoBuscar" OnValidSubmit="(() => Buscar(objetoBuscar.Texto))"></FormBuscar>
+            </div>
+        </div>
+    </div>
+<hr />
+
+
+<div class="row">
+    <div class="row col-lg-12" style="padding-left:2em">
+
+        <div class="table-responsive-sm w-100">
+
+            @if (servicios == null || servicios.Count.Equals(0))
+            {
+                <p class="text-danger" style="font-family: 'Arial Rounded MT'; text-align: center">N/A</p>
+            }
+            else
+            {
+                <table class="table table-light">
+                    <thead>
+                        <tr style="font-size: small; color: white; background-image: linear-gradient(182deg, rgb(8, 38, 123) 0%, #4f1056 90%);">
+                            <th></th>
+                            <th><span style="cursor:pointer" @onclick="@(() => Ordenar("Fecha"))">Fecha </span><i class="@(IndicadorOrden("Fecha"))"></i></th>
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th><span style="cursor:pointer" @onclick="@(() => Ordenar("Cantidad"))">Cantidad </span><i class="@(IndicadorOrden("Cantidad"))"></i></th>
+                            <th><span style="cursor:pointer" @onclick="@(() => Ordenar("Precio"))">Precio </span><i class="@(IndicadorOrden("Precio"))"></i></th>
+                            <th><span style="cursor:pointer" @onclick="@(() => Ordenar("Costo"))">Costo </span><i class="@(IndicadorOrden("Costo"))"></i></th>
+                            <th><span style="cursor:pointer" @onclick="@(() => Ordenar("Ingreso"))">Ingreso </span><i class="@(IndicadorOrden("Ingreso"))"></i></th>
+                            <th><span style="cursor:pointer" @onclick="@(() => Ordenar("ParteTaller"))">Taller </span><i class="@(IndicadorOrden("ParteTaller"))"></i></th>
+                            <th><span style="cursor:pointer" @onclick="@(() => Ordenar("GananciaNeta"))">Ganancia </span><i class="@(IndicadorOrden("GananciaNeta"))"></i></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody class="font-size-1" style="font-family: 'Arial Rounded MT'">
+                        @foreach (var item in servicios)
+                        {
+                            <tr class="my-transition-3d-hover">
+                                <td><input name="AreChecked" type="checkbox" value="@item" @onchange="eventArgs => { CHBCheckChanged(item, eventArgs.Value);}" /></td>
+                                <td class="align-middle"><a style="color: #575d5d; font-size: small">@String.Format("{0:dd/MM/yyyy}", item.Fecha)</a></td>
+                                <td class="align-middle"><a style="color: #424444; font-size: small">@item.Tipo</a></td>
+                                <td class="align-middle"><a style="color: #424444; font-size: small">@item.Descripcion</a></td>
+                                <td class="align-middle"><a class="text-danger" style="font-size: small">@item.Cantidad</a></td>
+                                <td class="align-middle"><a class="text-info" style="font-size: small">@item.Precio</a></td>
+                                <td class="align-middle"><a class="text-success" style="font-size: small">@item.Costo</a></td>
+                                <td class="align-middle"><a class="text-warning" style="font-size: small">@item.Ingreso</a></td>
+                                <td class="align-middle"><a class="text-primary" style="font-size: small">@item.ParteTaller</a></td>
+                                <td class="align-middle"><a class="text-success" style="font-size: small">@item.GananciaNeta</a></td>
+                                <td>
+                                    <div>
+                                        <mark @onclick="@(() =>Link("/servicios/ver-servicio?id="+item.Id))" class="bg-success" style="cursor:pointer; border-radius:20px 20px 20px 20px; padding-left:5px; color:white"><span class="oi oi-book" aria-hidden="true"></span></mark>
+                                        <mark @onclick="@(() =>Link("/servicios/editar-servicio?id="+item.Id))" class="bg-primary" style="cursor:pointer; border-radius:20px 20px 20px 20px; padding-left:5px; color:white"><span class="oi oi-pencil" aria-hidden="true"></span></mark>
+                                        <mark @onclick="(() => Eliminar(item))" class="bg-danger" style="cursor:pointer; border-radius:20px 20px 20px 20px; padding-left:5px; color:white"><span class="oi oi-trash" aria-hidden="true"></span></mark>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+
+<Paginacion TotaPagesQuantity="totalPageQuantity" CurrentPage="currentPage" Radius="3" SelectedPage="SelectedPage"></Paginacion>
+
+<div class="col-12 mx-md-auto">
+    <div class="card-deck space-top-1 w-100 mx-md-auto justify-content-between mt-4">
+        <div class="my-card col-xl-3 mb-3 admin-border-left-primary admin-shadow">
+            <div class="my-card-body p-3 d-flex justify-content-between">
+                <label>Ingreso Hoy</label>
+                <span class="text-primary">@(((double)TotalIngresoHoy).ToString("C2", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")))</span>
+            </div>
+        </div>
+        <div class="my-card col-xl-3 mb-3 admin-border-left-success admin-shadow">
+            <div class="my-card-body p-3 d-flex justify-content-between">
+                <label>Taller Hoy</label>
+                <span class="text-primary">@(((double)TotalTallerHoy).ToString("C2", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")))</span>
+            </div>
+        </div>
+        <div class="my-card col-xl-3 mb-3 admin-border-left-success admin-shadow">
+            <div class="my-card-body p-3 d-flex justify-content-between">
+                <label>Ganacia Hoy</label>
+                <span class="text-primary">@(((double)TotalGanNetaHoy).ToString("C2", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")))</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    private double TotalGanNetaHoy { get; set; }
+    private double TotalTallerHoy { get; set; }
+    private double TotalIngresoHoy { get; set; }
+    private int totalPageQuantity;
+    private int currentPage = 1;
+    string campoSorteoActual = "Fecha";
+    string ordenSorteoActual = "Desc";
+    private string Token { get; set; } = "";
+
+    public MultiTask multi;
+    private List<ModeloServicio> ListadoEliminar { get; set; } = new List<ModeloServicio>();
+
+    List<ModeloServicio> servicios { get; set; } = new List<ModeloServicio>();
+    Buscar objetoBuscar { get; set; } = new Buscar();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Token = await JS.GetFromLocalStorage("TOKENKEY");
+        await LoadItems(1, 5, campoSorteoActual, ordenSorteoActual);
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        currentPage = page;
+        if (string.IsNullOrEmpty(objetoBuscar.Texto))
+        {
+            await LoadItems(page, 5, campoSorteoActual, ordenSorteoActual);
+        }
+        else
+        {
+            await Buscar(objetoBuscar.Texto, page);
+        }
+    }
+
+    private async void DataChanged()
+    {
+        await LoadItems(currentPage, 5, campoSorteoActual, ordenSorteoActual);
+        StateHasChanged();
+    }
+
+    async Task LoadItems(int page = 1, int quantityPerPage = 5, string campoSorteo = "Fecha", string ordenSorteo = "Desc")
+    {
+        totalPageQuantity = (await serviciosService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, string.Empty, campoSorteo, ordenSorteo)).CantPorPag;
+        servicios = (await serviciosService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, string.Empty, campoSorteo, ordenSorteo)).ListaObjetos.ToList();
+        await CalcularTotal();
+    }
+
+    private async Task CalcularTotal()
+    {
+        var listadoHoy = await serviciosService.GetHoy();
+        TotalGanNetaHoy = listadoHoy.Sum(x => x.GananciaNeta);
+        TotalTallerHoy = listadoHoy.Sum(x => x.ParteTaller);
+        TotalIngresoHoy = listadoHoy.Sum(x => x.Ingreso);
+    }
+
+    private async Task Eliminar(ModeloServicio item)
+    {
+        if (await JS.ConfirmSinResp("Eliminar", "Esta acción no es retornable"))
+        {
+            var resp = await tallerService.RestarBalance(item.ParteTaller, Token);
+            if (resp.ToString().Contains("Bad"))
+            {
+                await JS.MostrarMensaje("Error", "El Fondo es insuficiente", IJSExtensions.TipoMensajeSweetAlert.error);
+                return;
+            }
+            await ActualizarAlmacen(item);
+            await serviciosService.Delete(item.Id, Token);
+        }
+
+        await LoadItems(currentPage, 5, campoSorteoActual, ordenSorteoActual);
+    }
+
+    private async Task ActualizarAlmacen(ModeloServicio servicio)
+    {
+        if (servicio.ListaProductos == null)
+            return;
+        var listaProductos = JsonSerializer.Deserialize<List<Producto>>(servicio.ListaProductos,
+                new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+        foreach (var item in listaProductos)
+        {
+            var prod = new Producto();
+            prod.Fecha = item.Fecha;
+            prod.Cantidad = 1;
+            prod.CategoriaId = item.CategoriaId;
+            prod.MarcaId = item.MarcaId;
+            prod.ModeloId = item.ModeloId;
+            prod.Costo = item.Costo;
+            prod.Descripcion = item.Descripcion;
+            await inventarioService.Add(prod, Token);
+        }
+    }
+
+    private void Link(string args)
+    {
+        navi.NavigateTo(args, true);
+    }
+
+    private async Task Buscar(string texto, int page = 1)
+    {
+        int quantityPerPage = 5;
+        totalPageQuantity = (await serviciosService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, texto, "Fecha", "Desc")).CantPorPag;
+        servicios = (await serviciosService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, texto, "Fecha", "Desc")).ListaObjetos.ToList();
+    }
+
+    private string IndicadorOrden(string campoSorteo)
+    {
+        if (campoSorteo.Equals(campoSorteoActual))
+        {
+            return ordenSorteoActual.Equals("Asc") ? "oi oi-arrow-top" : "oi oi-arrow-bottom";
+        }
+        return string.Empty;
+    }
+
+    private async Task Ordenar(string campoSorteo)
+    {
+        if (campoSorteo.Equals(campoSorteoActual))
+        {
+            ordenSorteoActual = ordenSorteoActual.Equals("Asc") ? "Desc" : "Asc";
+        }
+        else
+        {
+            campoSorteoActual = campoSorteo;
+            ordenSorteoActual = "Asc";
+        }
+        await LoadItems(1, 5, campoSorteoActual, ordenSorteoActual);
+    }
+
+    private async Task EliminarMultiple()
+    {
+        if (ListadoEliminar.Count > 0)
+        {
+            if (await JS.Confirm("Eliminar", "Esta acción no es retornable"))
+            {
+                var resp = await tallerService.RestarBalanceMultiple(ListadoEliminar, Token);
+                if (resp.ToString().Contains("Bad"))
+                {
+                    await JS.MostrarMensaje("Error", "El Fondo es insuficiente", IJSExtensions.TipoMensajeSweetAlert.error);
+                    return;
+                }
+                foreach (var item in ListadoEliminar)
+                {
+                    await ActualizarAlmacen(item);
+                }
+                await serviciosService.DeleteMultiple(ListadoEliminar, Token);
+                ListadoEliminar.Clear();
+                navi.NavigateTo("/servicios", true);
+            }
+            await LoadItems(currentPage);
+        }
+    }
+
+    private async Task CHBCheckChanged(ModeloServicio item, object checkValue)
+    {
+        if ((bool)checkValue)
+        {
+            ListadoEliminar.Add(item);
+        }
+        else
+        {
+            ListadoEliminar.Remove(item);
+        }
+        if (ListadoEliminar.Count > 0)
+        {
+            multi.Activate();
+        }
+        else
+        {
+            multi.Deactivate();
+        }
+    }
+}
+

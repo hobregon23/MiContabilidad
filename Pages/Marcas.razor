@@ -1,0 +1,222 @@
+﻿@page "/marcas"
+@inject IJSRuntime JS
+@inject IMarcasServicio marcasService
+@inject NavigationManager navi
+
+<div class="row">
+    <div class="ml-4">
+        <h1>Marcas</h1>
+    </div>
+    <div class="row" style="margin-left:auto; margin-right:5%">
+        <div>
+            <MultiTask @ref="multi" Eliminar="(() => EliminarMultiple())"></MultiTask>
+        </div>
+        <div style="padding-left:3em">
+            <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-soft-primary transition-3d-hover" value="Añadir" @onclick="(() => InicializarObjetoAdd())" />
+        </div>
+        <div style="padding-left:2em">
+            <FormBuscar objetoBuscar="@objetoBuscar" OnValidSubmit="(() => Buscar(objetoBuscar.Texto))"></FormBuscar>
+        </div>
+    </div>
+</div>
+<hr />
+
+<div class="row">
+
+    <div class="row col-lg-8 mx-md-auto" style="padding-left:2em">
+
+        <div class="table-responsive-sm w-100">
+
+            @if (marcas == null)
+            {<p class="text-danger" style="font-family: 'Arial Rounded MT'; text-align: center">Cargando</p>}
+            else if (marcas.Count == 0)
+            {
+                <p class="text-danger" style="font-family: 'Arial Rounded MT'; text-align: center">N/A</p>
+            }
+            else
+            {
+                <table class="table table-light">
+                    <thead>
+                        <tr style="font-size: small; color: white; background-image: linear-gradient(182deg, rgb(8, 38, 123) 0%, #4f1056 90%);">
+                            <th></th>
+                            <th>Nombre</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody class="font-size-1" style="font-family: 'Arial Rounded MT'">
+                        @foreach (var item in marcas)
+                        {
+                            <tr class="my-transition-3d-hover">
+                                <td><input name="AreChecked" type="checkbox" value="@item" @onchange="eventArgs => { CHBCheckChanged(item, eventArgs.Value);}" /></td>
+                                <td class="align-middle"><a class="text-success" style="font-size: small">@item.Nombre</a></td>
+                                <td>
+                                    <div>
+                                        <mark data-toggle="modal" data-target="#taskModal-edit" @onclick="(() => InicializarObjetoEdit(item))" class="bg-primary" style="cursor:pointer; border-radius:20px 20px 20px 20px; padding-left:5px; color:white"><span class="oi oi-pencil" aria-hidden="true"></span></mark>
+                                        <mark @onclick="(() => Eliminar(item))" class="bg-danger" style="cursor:pointer; border-radius:20px 20px 20px 20px; padding-left:5px; color:white"><span class="oi oi-trash" aria-hidden="true"></span></mark>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+<AddMarca ObjetoAdd="objetoAdd" ListMarcas="marcas" DataChanged="@DataChanged" Token="@Token" />
+<EditMarca ObjetoEdit="objetoEdit" DataChanged="@DataChanged" Token="@Token" />
+<Paginacion TotaPagesQuantity="totalPageQuantity" CurrentPage="currentPage" Radius="3" SelectedPage="SelectedPage"></Paginacion>
+
+
+@code {
+
+    List<Marca> marcas { get; set; }
+    Marca objetoAdd = new Marca();
+    Marca objetoEdit = new Marca();
+    private string Token { get; set; } = "";
+
+    private int totalPageQuantity;
+    private int currentPage = 1;
+    string campoSorteoActual = "Nombre";
+    string ordenSorteoActual = "Asc";
+
+    Buscar objetoBuscar { get; set; } = new Buscar();
+
+    public MultiTask multi;
+    private List<Marca> ListadoEliminar { get; set; } = new List<Marca>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        Token = await JS.GetFromLocalStorage("TOKENKEY");
+        await LoadItems();
+    }
+
+    async Task LoadItems(int page = 1, int quantityPerPage = 7, string campoSorteo = "Nombre", string ordenSorteo = "Asc")
+    {
+        totalPageQuantity = (await marcasService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, string.Empty, campoSorteo, ordenSorteo)).CantPorPag;
+        marcas = (await marcasService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, string.Empty, campoSorteo, ordenSorteo)).ListaObjetos.ToList();
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        currentPage = page;
+        if (string.IsNullOrEmpty(objetoBuscar.Texto))
+        {
+            await LoadItems(page);
+        }
+        else
+        {
+            await Buscar(objetoBuscar.Texto, page);
+        }
+    }
+
+    private string IndicadorOrden(string campoSorteo)
+    {
+        if (campoSorteo.Equals(campoSorteoActual))
+        {
+            return ordenSorteoActual.Equals("Asc") ? "oi oi-arrow-top" : "oi oi-arrow-bottom";
+        }
+        return string.Empty;
+    }
+
+    private async Task Ordenar(string campoSorteo)
+    {
+        if (campoSorteo.Equals(campoSorteoActual))
+        {
+            ordenSorteoActual = ordenSorteoActual.Equals("Asc") ? "Desc" : "Asc";
+        }
+        else
+        {
+            campoSorteoActual = campoSorteo;
+            ordenSorteoActual = "Asc";
+        }
+        await LoadItems(1, 7, campoSorteoActual, ordenSorteoActual);
+    }
+
+    private async Task Buscar(string texto, int page = 1)
+    {
+        int quantityPerPage = 7;
+        totalPageQuantity = (await marcasService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, texto, "Nombre", "Asc")).CantPorPag;
+        marcas = (await marcasService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, texto, "Nombre", "Asc")).ListaObjetos.ToList();
+    }
+
+    private async Task Eliminar(Marca item)
+    {
+        var usada = await marcasService.GetMarcaEnUso(item.Id);
+        if (usada)
+        {
+            await JS.MostrarMensaje("Denegado", $"Modelo {item.Nombre} está siendo usado.", IJSExtensions.TipoMensajeSweetAlert.error);
+        }
+        else
+        {
+            if (await JS.Confirm($"{item.Nombre} no está en uso.", $"Esto eliminará solo la marca {item.Nombre}."))
+                await marcasService.Delete(item.Id, Token);
+        }
+
+        await LoadItems(currentPage);
+    }
+
+    private void InicializarObjetoAdd()
+    {
+        objetoAdd = new Marca();
+    }
+
+    private void InicializarObjetoEdit(Marca item)
+    {
+        objetoEdit = new Marca() { Id = item.Id, Nombre = item.Nombre };
+    }
+
+    private async void DataChanged()
+    {
+        await LoadItems(currentPage);
+        StateHasChanged();
+    }
+
+    private async Task EliminarMultiple()
+    {
+        var clean = true;
+        foreach (var item in ListadoEliminar)
+        {
+            var usada = await marcasService.GetMarcaEnUso(item.Id);
+            if (usada)
+            {
+                await JS.MostrarMensaje("Denegado", $"Modelo {item.Nombre} está siendo usado.", IJSExtensions.TipoMensajeSweetAlert.error);
+                clean = false;
+                return;
+            }
+        }
+
+        if (ListadoEliminar.Count > 0 && clean)
+        {
+            if (await JS.Confirm("Eliminar", "Esta acción no es retornable"))
+            {
+                await marcasService.EliminarMultiple(ListadoEliminar, Token);
+                ListadoEliminar.Clear();
+                navi.NavigateTo("/marcas", true);
+            }
+        }
+    }
+
+    private async Task CHBCheckChanged(Marca item, object checkValue)
+    {
+        if ((bool)checkValue)
+        {
+            ListadoEliminar.Add(item);
+        }
+        else
+        {
+            ListadoEliminar.Remove(item);
+        }
+        if (ListadoEliminar.Count > 0)
+        {
+            multi.Activate();
+        }
+        else
+        {
+            multi.Deactivate();
+        }
+    }
+
+}

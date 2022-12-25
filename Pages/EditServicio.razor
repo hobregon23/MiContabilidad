@@ -1,0 +1,558 @@
+﻿@page "/servicios/editar-servicio"
+@inject IJSRuntime JS
+@inject ICategoriasServicio categoriasService
+@inject IMarcasServicio marcasService
+@inject IModelosServicio modelosService
+@inject IInventarioServicio inventarioService
+@inject IServiciosServicio serviciosService
+@inject IOpcionesAdminService adminService
+@inject ITallerService tallerService
+@inject NavigationManager navi
+
+
+<div class="row">
+    <div>
+        <h3>Editar Servicio</h3>
+    </div>
+</div>
+<hr />
+
+<div class="row" style="padding-bottom:3em">
+    <div class="col-md-6" style="position:inherit">
+        <EditForm Model="@ObjetoServicio" OnValidSubmit="@HandleValidSubmit">
+            <div class="form-group">
+                <ValidationSummary />
+                <input type="hidden" @bind-value="@ObjetoServicio.Id" />
+                <div class="row">
+                    <div class="col-md-6" style="position:inherit">
+                        <label for="taskName">Fecha</label>
+                        <InputDate class="form-control" @bind-Value="@ObjetoServicio.Fecha" />
+                    </div>
+                    <div class="col-md-6" style="position:inherit">
+                        <label for="taskName">Tipo</label>
+                        <select class="form-control" @bind="@ObjetoServicio.Tipo" required>
+                            <option disabled value="">Seleccionar</option>
+                            <option value="Venta">Venta</option>
+                            <option value="Reparación">Reparación</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row" style="padding-top:7px">
+                    <div class="col-md-12" style="position:inherit">
+                        <label for="taskName">Descripción</label>
+                        <InputText class="form-control" @bind-Value="@ObjetoServicio.Descripcion" />
+                    </div>
+                </div>
+                <div class="row" style="padding-top:7px">
+                    <div class="col-md-3" style="position:inherit">
+                        <label for="taskName">Cantidad</label>
+                        <InputNumber class="form-control" @bind-Value="@Cantidad" />
+                    </div>
+                    <div class="col-md-3" style="position:inherit">
+                        <label for="taskName">Precio</label>
+                        <InputNumber class="form-control" @bind-Value="@Precio" />
+                    </div>
+                    <div class="col-md-3" style="position:inherit">
+                        <label for="taskName">Costo</label>
+                        <InputNumber class="form-control" @bind-Value="@Costo" />
+                    </div>
+                    <div class="col-md-3" style="position:inherit">
+                        <label for="taskName">Taller</label>
+                        <InputNumber class="form-control" @bind-Value="@ParteTaller" />
+                    </div>
+                </div>
+                <div class="row" style="padding-top:7px">
+                    <div class="col-md-4" style="position:inherit">
+                        <label for="taskName">Ingreso</label>
+                        <InputNumber disabled class="form-control" @bind-Value="@Ingreso" />
+                    </div>
+                    <div class="col-md-4" style="position:inherit">
+                        <label for="taskName">Ganancia Bruta</label>
+                        <InputNumber disabled class="form-control" @bind-Value="@GananciaBruta" false />
+                    </div>
+                    <div class="col-md-4" style="position:inherit">
+                        <label for="taskName">Ganancia Neta</label>
+                        <InputNumber disabled class="form-control" @bind-Value="@GananciaNeta" false />
+                    </div>
+                </div>
+                <div class="row" style="padding-top:15px">
+                    <div class="col-md-4" style="position:inherit">
+                        <label>Productos usados:</label>
+                    </div>
+                    <div class="col">
+                        <div class="col-md-12" style="position:inherit">
+                            @foreach (var item in listaProductoEntrada)
+                            {
+                                <div class="mb-1">
+                                    <label style="padding-left:1em">
+                                        <span class="oi oi-check" aria-hidden="true"></span> @GetNombreCategoria(item.CategoriaId)-@GetNombreModelo(item.ModeloId)
+                                    </label>
+                                    <mark @onclick="(() => QuitarProducto(item))" class="bg-danger" style="cursor:pointer; border-radius:20px 20px 20px 20px; padding-left:5px; color:white"><span class="oi oi-trash" aria-hidden="true"></span></mark>
+                                </div>
+                            }
+                            @foreach (var item in listaProducto)
+                            {
+                                <div class="mb-1">
+                                    <label style="padding-left:1em">
+                                        <span class="oi oi-check" aria-hidden="true"></span> @GetNombreCategoria(item.CategoriaId)-@GetNombreModelo(item.ModeloId)
+                                    </label>
+                                    <mark @onclick="(() => QuitarProducto(item))" class="bg-danger" style="cursor:pointer; border-radius:20px 20px 20px 20px; padding-left:5px; color:white"><span class="oi oi-trash" aria-hidden="true"></span></mark>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Actualizar</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+            <DataAnnotationsValidator />
+        </EditForm>
+    </div>
+    <div class="col-md-6" style="position:inherit">
+        <div class="row" style="padding-top:7px">
+            <div class="col-md-4" style="position:inherit">
+                <label for="taskName">Categoría</label>
+                <select class="form-control" @bind="@CatIdString" required>
+                    @foreach (var item in CategoriasUsadas)
+                    {
+                        <option value="@item.Id">
+                            @item.Nombre
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4" style="position:inherit">
+                <label for="taskName">Marca</label>
+                <select class="form-control" @bind="@MarcaIdString" required>
+                    @foreach (var item in MarcasUsadas)
+                    {
+                        <option value="@item.Id">
+                            @item.Nombre
+                        </option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="row" style="padding-top:1em">
+            <div class="table-responsive-sm justify-content-center ml-3 mr-3 w-100">
+
+                @if (productosXmarca.Count.Equals(0))
+                {
+                    <p class="text-danger" style="text-align: center">N/A</p>
+                }
+                else
+                {
+                    <table class="table table-light">
+                        <thead>
+                            <tr style="font-size: small; color: white; background-image: linear-gradient(182deg, rgb(8, 38, 123) 0%, #4f1056 90%)">
+                                <th></th>
+                                <th>Modelo</th>
+                                <th>Cantidad</th>
+                                <th>Costo</th>
+                                <th>Descripción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="font-size-1" style="font-family: 'Arial Rounded MT'">
+                            @foreach (var item in productosXmarca)
+                            {
+                                <tr class="my-transition-3d-hover">
+                                    @if (item.Cantidad - listaProducto.FindAll(x => x.Id.Equals(item.Id)).Count > 0)
+                                    {
+                                        <td>
+                                            <button class="btn btn-sm btn-success" @onclick="(() => AddProducto(item.Id))"><span class="oi oi-plus" aria-hidden="true"></span></button>
+                                        </td>
+                                    }
+                                    else
+                                    {
+                                        <td>
+                                            <button class="btn btn-sm btn-success" disabled @onclick="(() => AddProducto(item.Id))"><span class="oi oi-plus" aria-hidden="true"></span></button>
+                                        </td>
+                                    }
+                                    <td class="align-middle"><a class="text-info" style="font-size: small">@GetNombreModelo(item.ModeloId)</a></td>
+                                    <td class="align-middle"><a class="text-danger" style="font-size: small">@item.Cantidad</a></td>
+                                    <td class="align-middle"><a class="text-success" style="font-size: small">@item.Costo</a></td>
+                                    <td class="align-middle"><a class="text-warning" style="font-size: small">@item.Descripcion</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                <Paginacion TotaPagesQuantity="totalPageQuantity" CurrentPage="currentPage" Radius="3" SelectedPage="SelectedPage"></Paginacion>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+@code {
+
+    private int totalPageQuantity;
+    private int currentPage = 1;
+    private int argId { get; set; }
+    public ModeloServicio ObjetoServicio { get; set; } = new ModeloServicio();
+    public OpcionesAdministracion OpcionesAdmin { get; set; } = new OpcionesAdministracion();
+    private string Token { get; set; } = "";
+    private double ParteTallerOld { get; set; }
+
+
+    //parte almacen
+
+
+    public Producto ObjetoAddProd { get; set; } = new Producto();
+    public List<Modelo> ModelosUsados { get; set; } = new List<Modelo>();
+    public List<Marca> MarcasUsadas { get; set; } = new List<Marca>();
+    public List<Categoria> CategoriasUsadas { get; set; } = new List<Categoria>();
+    public List<Categoria> Categorias { get; set; } = new List<Categoria>();
+    public List<Modelo> Modelos { get; set; } = new List<Modelo>();
+
+    List<Modelo> modelosXmarca { get; set; } = new List<Modelo>();
+    List<Producto> productosXmarcaQueryable { get; set; } = new List<Producto>();
+    List<Producto> productosXmarca { get; set; } = new List<Producto>();
+    public List<Producto> Productos { get; set; }
+    List<Producto> listaProducto { get; set; } = new List<Producto>();
+    List<Producto> listaProductoEntrada { get; set; } = new List<Producto>();
+    List<Producto> listaProductoAquitar { get; set; } = new List<Producto>();
+
+    public string CatIdString
+    {
+        get
+        {
+            return ObjetoAddProd.CategoriaId.ToString();
+        }
+        set
+        {
+            currentPage = 1;
+            ObjetoAddProd.CategoriaId = int.Parse(value);
+            MarcaIdString = ObjetoAddProd.MarcaId.ToString();
+        }
+    }
+
+    private string GetNombreModelo(int id)
+    {
+        try
+        {
+            var modelo = Modelos.First(x => x.Id == id);
+            return modelo.Nombre;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private string GetNombreCategoria(int id)
+    {
+        try
+        {
+            var cat = Categorias.First(x => x.Id == id);
+            return cat.Nombre;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public string MarcaIdString
+    {
+        get
+        {
+            return ObjetoAddProd.MarcaId.ToString();
+        }
+        set
+        {
+            ObjetoAddProd.MarcaId = int.Parse(value);
+            modelosXmarca = ModelosUsados.Where(x => x.MarcaId.Equals(ObjetoAddProd.MarcaId)).ToList();
+            productosXmarcaQueryable = new List<Producto>();
+            foreach (var item in Productos)
+            {
+                if (modelosXmarca.Exists(x => x.Id == item.ModeloId) && item.CategoriaId == ObjetoAddProd.CategoriaId)
+                {
+                    productosXmarcaQueryable.Add(item);
+                }
+            }
+            currentPage = 1;
+            GetProdXMarcaPag(new Pagination() { Page = 1, QuantityPerPage = 5 });
+            try
+            {
+                //como se pone en el select automaticamente el primero lo paso al modeloId sino se queda en 0
+                ObjetoAddProd.ModeloId = modelosXmarca.First().Id;
+            }
+            catch
+            {
+                //
+            }
+        }
+    }
+
+    private void SelectedPage(int page)
+    {
+        currentPage = page;
+        GetProdXMarcaPag(new Pagination() { Page = page, QuantityPerPage = 5 });
+    }
+
+    private void GetProdXMarcaPag(Pagination pagination)
+    {
+        double count = productosXmarcaQueryable.AsQueryable().Count();
+        double pagesQuantity = Math.Ceiling(count / pagination.QuantityPerPage);
+
+        var resp = new PaginationResponse<Producto>() { ListaObjetos = productosXmarcaQueryable.AsQueryable().Paginate(pagination).ToList(), CantPorPag = (int)pagesQuantity };
+        productosXmarca = resp.ListaObjetos.ToList();
+        totalPageQuantity = resp.CantPorPag;
+    }
+
+    private void AddProducto(int id)
+    {
+        var proSeleccionado = Productos.First(x => x.Id == id);
+        if (proSeleccionado != null)
+        {
+            listaProducto.Add(proSeleccionado);
+            Costo += proSeleccionado.Costo;
+        }
+    }
+
+    private void QuitarProducto(Producto item)
+    {
+        if (listaProductoEntrada.Contains(item))
+        {
+            listaProductoAquitar.Add(item);
+            listaProductoEntrada.Remove(item);
+            Costo -= item.Costo;
+        }
+        else if (listaProducto.Contains(item))
+        {
+            listaProducto.Remove(item);
+            Costo -= item.Costo;
+        }
+    }
+
+
+
+    // fin parte almacen
+
+    //parte servicio
+
+    public int Cantidad
+    {
+        get
+        {
+            return ObjetoServicio.Cantidad;
+        }
+        set
+        {
+            ObjetoServicio.Cantidad = value;
+            CalcIngreso();
+            CalcGanancia();
+            CalcParteTaller();
+            CalcGananciaNeta();
+        }
+    }
+
+    public double Precio
+    {
+        get
+        {
+            return ObjetoServicio.Precio;
+        }
+        set
+        {
+            ObjetoServicio.Precio = value;
+            CalcIngreso();
+            CalcGanancia();
+            CalcParteTaller();
+            CalcGananciaNeta();
+        }
+    }
+
+    public double Costo
+    {
+        get
+        {
+            return ObjetoServicio.Costo;
+        }
+        set
+        {
+            ObjetoServicio.Costo = value;
+            CalcIngreso();
+            CalcGanancia();
+            CalcParteTaller();
+            CalcGananciaNeta();
+        }
+    }
+
+    public double Ingreso
+    {
+        get
+        {
+            return ObjetoServicio.Ingreso;
+        }
+        set
+        {
+            ObjetoServicio.Ingreso = value;
+        }
+    }
+
+    public double GananciaBruta
+    {
+        get
+        {
+            return ObjetoServicio.GananciaBruta;
+        }
+        set
+        {
+            ObjetoServicio.GananciaBruta = value;
+        }
+    }
+
+    public double GananciaNeta
+    {
+        get
+        {
+            return ObjetoServicio.GananciaNeta;
+        }
+        set
+        {
+            ObjetoServicio.GananciaNeta = value;
+        }
+    }
+
+    public double ParteTaller
+    {
+        get
+        {
+            return ObjetoServicio.ParteTaller;
+        }
+        set
+        {
+            ObjetoServicio.ParteTaller = value;
+            CalcGananciaNeta();
+        }
+    }
+
+    private void CalcIngreso()
+    {
+        ObjetoServicio.Ingreso = Cantidad * Precio;
+    }
+
+    private void CalcGanancia()
+    {
+        ObjetoServicio.GananciaBruta = Ingreso - Costo;
+    }
+
+    private void CalcParteTaller()
+    {
+        ObjetoServicio.ParteTaller = Costo + ((int)GananciaBruta / OpcionesAdmin.PorCada) * OpcionesAdmin.ParteTaller;
+    }
+
+    private void CalcGananciaNeta()
+    {
+        ObjetoServicio.GananciaNeta = ObjetoServicio.Ingreso - ParteTaller;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Token = await JS.GetFromLocalStorage("TOKENKEY");
+        await LoadItems();
+    }
+
+    async Task LoadItems(int page = 1, int quantityPerPage = 5)
+    {
+        var uri = navi.ToAbsoluteUri(navi.Uri);
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("id", out var _id))
+        {
+            argId = Convert.ToInt32(_id);
+        }
+
+        ObjetoServicio = (await serviciosService.GetById(argId)).Value;
+
+        ParteTallerOld = ObjetoServicio.ParteTaller;
+
+        if (ObjetoServicio.ListaProductos != null)
+        {
+            listaProductoEntrada = JsonSerializer.Deserialize<List<Producto>>(ObjetoServicio.ListaProductos,
+                new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+        }
+
+        Productos = await inventarioService.Get();
+        CategoriasUsadas = await categoriasService.GetCatUsadas();
+        MarcasUsadas = await marcasService.GetMarcasUsadas();
+        ModelosUsados = await modelosService.GetModelosUsados();
+        Categorias = await categoriasService.Get();
+        Modelos = await modelosService.Get();
+        OpcionesAdmin = await adminService.Get();
+        if (CategoriasUsadas.Count != 0) { CatIdString = CategoriasUsadas.First().Id.ToString(); }
+        if (MarcasUsadas.Count != 0) { MarcaIdString = MarcasUsadas.First().Id.ToString(); }
+    }
+
+    private async Task ActualizarAlmacen()
+    {
+        foreach (var item in listaProducto)
+        {
+            if (item.Cantidad > 1)
+            {
+                item.Cantidad -= 1;
+                await inventarioService.Update(item, Token);
+            }
+            else
+            {
+                await inventarioService.Delete(item.Id, Token);
+            }
+        }
+        foreach (var item in listaProductoAquitar)
+        {
+            ObjetoAddProd = new Producto();
+            ObjetoAddProd.Fecha = item.Fecha;
+            ObjetoAddProd.Cantidad = 1;
+            ObjetoAddProd.CategoriaId = item.CategoriaId;
+            ObjetoAddProd.MarcaId = item.MarcaId;
+            ObjetoAddProd.ModeloId = item.ModeloId;
+            ObjetoAddProd.Costo = item.Costo;
+            ObjetoAddProd.Descripcion = item.Descripcion;
+            await inventarioService.Add(ObjetoAddProd, Token);
+        }
+    }
+
+    private async Task<bool> ActualizarTaller()
+    {
+        if (ParteTaller > ParteTallerOld)
+            await tallerService.AumentarBalance(ParteTaller - ParteTallerOld, Token);
+        else if (ParteTaller < ParteTallerOld)
+        {
+            var resp = await tallerService.RestarBalance(ParteTallerOld - ParteTaller, Token);
+            if (resp.ToString().Contains("Bad"))
+                return false;
+        }
+        return true;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (!await ActualizarTaller())
+        {
+            await JS.MostrarMensaje("Error", "El Fondo es insuficiente", IJSExtensions.TipoMensajeSweetAlert.error);
+            return;
+        }
+
+        if (Ingreso < Costo)
+        {
+            await JS.MostrarMensaje("Error", "El Ingreso es menor al Costo", IJSExtensions.TipoMensajeSweetAlert.error);
+            return;
+        }
+
+        List<Producto> listaUnificadaFinal = new List<Producto>();
+        foreach (var item in listaProducto)
+        {
+            listaUnificadaFinal.Add(item);
+        }
+        foreach (var item in listaProductoEntrada)
+        {
+            listaUnificadaFinal.Add(item);
+        }
+        ObjetoServicio.ListaProductos = JsonSerializer.Serialize(listaUnificadaFinal);
+        await serviciosService.Update(ObjetoServicio, Token);
+        await ActualizarAlmacen();
+        navi.NavigateTo("/servicios", true);
+    }
+}

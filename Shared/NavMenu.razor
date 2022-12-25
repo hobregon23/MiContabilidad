@@ -1,0 +1,78 @@
+﻿@inject NavigationManager navi
+
+<div class="top-row pl-4 navbar navbar-dark">
+    <a class="navbar-brand" href="" @onclick="@(()=>HandleClick(""))">MiContabilidad</a>
+    <button class="navbar-toggler" @onclick="ToggleNavMenu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+</div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <ul class="nav flex-column">
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="" @onclick="@(()=>HandleClick(""))" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> Home
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="servicios">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Servicios
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="inversiones">
+                <span class="oi oi-credit-card" aria-hidden="true"></span> Inversiones/Gastos
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="almacen">
+                <span class="oi oi-hard-drive" aria-hidden="true"></span> Almacén
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="categorias">
+                <span class="oi oi-tags" aria-hidden="true"></span> Categorías
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="marcas">
+                <span class="oi oi-phone" aria-hidden="true"></span> Marcas
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="modelos">
+                <span class="oi oi-bookmark" aria-hidden="true"></span> Modelos
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="graficas">
+                <span class="oi oi-graph" aria-hidden="true"></span> Gráficas
+            </NavLink>
+        </li>
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <li class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin">
+                        <span class="oi oi-cog" aria-hidden="true"></span> Administración
+                    </NavLink>
+                </li>
+            </Authorized>
+        </AuthorizeView>
+    </ul>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private void HandleClick(string link)
+    {
+        navi.NavigateTo(link, true);
+    }
+}

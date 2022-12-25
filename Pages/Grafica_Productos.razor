@@ -1,0 +1,56 @@
+﻿@*@page "/graficas/productos"*@
+@using Radzen.Blazor
+@inject IJSRuntime JS
+
+<div class="row">
+    <div>
+        <h3>Gráficas</h3>
+    </div>
+    <div style="padding-left:2em">
+        @*<input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Agregar" @onclick="(() => InicializarObjetoAddCat())" />*@
+    </div>
+</div>
+<hr />
+<div class="row">
+
+    <div class="col-md-12">
+        <div style="text-align:center">
+            <label style="font-weight:bold">Productos</label>
+        </div>
+        <div style="font-family: 'Arial Rounded MT'">
+
+        </div>
+        <div style="text-align:center; padding-top:3em">
+            <BotonesGraf />
+        </div>
+    </div>
+</div>
+@code {
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadItems();
+    }
+
+    async Task LoadItems()
+    {
+
+    }
+
+
+
+
+
+    //chart
+    class DataItem
+    {
+
+    }
+
+    string FormatAsUSD(object value)
+    {
+        return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("en-US"));
+    }
+}

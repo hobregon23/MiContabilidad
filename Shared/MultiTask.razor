@@ -1,0 +1,28 @@
+﻿@if (!Active)
+{
+    <input type="button" class="btn btn-danger" value="Eliminar" disabled />
+}
+else
+{
+    <input type="button" class="btn btn-danger" value="Eliminar" onclick="@Eliminar" />
+}
+
+
+
+
+@code {
+
+    [Parameter] public EventCallback Eliminar { get; set; }
+
+    private bool Active { get; set; }
+    public void Activate()
+    {
+        Active = true;
+        StateHasChanged();
+    }
+    public void Deactivate()
+    {
+        Active = false;
+        StateHasChanged();
+    }
+}

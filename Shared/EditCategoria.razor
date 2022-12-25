@@ -1,0 +1,60 @@
+﻿@inject IJSRuntime JS
+@inject ICategoriasServicio catService
+@inject NavigationManager navi
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal-edit">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@ObjetoEdit" OnValidSubmit="@HandleValidSubmit">
+                    <div class="form-group">
+                        <ValidationSummary />
+                        <label for="taskName">Nombre</label>
+                        <input type="hidden" @bind-value="@ObjetoEdit.Id" />
+                        <InputText id="name" placeholder="ej: samsung" class="form-control" @bind-Value="@ObjetoEdit.Nombre" />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <DataAnnotationsValidator />
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+@code {
+
+    [Parameter]
+    public Categoria ObjetoEdit { get; set; }
+
+    [Parameter]
+    public Action DataChanged { get; set; }
+
+    [Parameter]
+    public string Token { get; set; } = "";
+
+    private async Task CloseTaskModal()
+    {
+        await JS.InvokeAsync<object>("CloseModal", "taskModal-edit");
+    }
+
+    private async void HandleValidSubmit()
+    {
+        await catService.Update(ObjetoEdit, Token);
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+        navi.NavigateTo("/categorias", true);
+    }
+
+
+}

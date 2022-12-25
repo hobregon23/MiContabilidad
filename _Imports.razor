@@ -1,0 +1,20 @@
+﻿@using System.Net.Http
+@using System.Globalization
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@using MiContabilidad
+@using MiContabilidad.Shared
+@using MiContabilidad.Modelos
+@using MiContabilidad.Data.Auth
+@using MiContabilidad.Data.Servicios
+@using MiContabilidad.Helpers
+@using Radzen
+@using Radzen.Blazor
+@using System.Text.Json
+@using Blazored.Toast
+@using Blazored.Toast.Services
+@attribute [Authorize(Roles = "User, Admin")]

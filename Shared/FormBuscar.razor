@@ -1,0 +1,15 @@
+﻿<EditForm Model="@objetoBuscar" OnValidSubmit="@OnValidSubmit">
+    <div class="row">
+        <div>
+            <InputText placeholder="Buscar" class="form-control" @bind-Value="@objetoBuscar.Texto"></InputText>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-success"><span class="oi oi-arrow-circle-right" aria-hidden="true"></span></button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter] public Buscar objetoBuscar { get; set; } = new Buscar();
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+}

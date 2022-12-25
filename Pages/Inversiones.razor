@@ -1,0 +1,247 @@
+﻿@page "/inversiones"
+@inject IJSRuntime JS
+@inject IInversionServicio inversionService
+@inject ITallerService tallerService
+@inject NavigationManager navi
+
+    <div class="row" style="position:relative">
+        <div class="ml-4">
+            <h1>Inversiones/Gastos</h1>
+        </div>
+        <div class="row" style="margin-left:auto; margin-right:5%">
+            <div>
+                <MultiTask @ref="multi" Eliminar="(() => EliminarMultiple())"></MultiTask>
+            </div>
+            <div style="padding-left:3em">
+                <input type="button" data-toggle="modal" data-target="#taskModal-add" class="btn btn-soft-primary transition-3d-hover" value="Añadir" @onclick="(() => InicializarObjetoAddInversion())" />
+            </div>
+            <div style="padding-left:2em">
+                <FormBuscar objetoBuscar="@objetoBuscar" OnValidSubmit="(() => Buscar(objetoBuscar.Texto))"></FormBuscar>
+            </div>
+        </div>
+    </div>
+<hr />
+
+<div class="row">
+    <div class="row col-lg-12" style="padding-left:2em">
+        <div class="table-responsive-sm w-100">
+
+            @if (listadoInversiones == null || listadoInversiones.Count.Equals(0))
+            {
+                <p class="text-danger" style="font-family: 'Arial Rounded MT'; text-align: center">N/A</p>
+            }
+            else
+            {
+                <table class="table table-light">
+                    <thead>
+                        <tr style="font-size: small; color: white; background-image: linear-gradient(182deg, rgb(8, 38, 123) 0%, #4f1056 90%);">
+                            <th></th>
+                            <th><span style="cursor:pointer" @onclick="@(() => Ordenar("Fecha"))">Fecha </span><i class="@(IndicadorOrden("Fecha"))"></i></th>
+                            <th>Descripción</th>
+                            <th><span style="cursor:pointer" @onclick="@(() => Ordenar("Cantidad"))">Cantidad </span><i class="@(IndicadorOrden("Cantidad"))"></i></th>
+                            <th><span style="cursor:pointer" @onclick="@(() => Ordenar("Costo"))">Costo </span><i class="@(IndicadorOrden("Costo"))"></i></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody class="font-size-1" style="font-family: 'Arial Rounded MT'">
+                        @foreach (var item in listadoInversiones)
+                        {
+                            <tr class="my-transition-3d-hover">
+                                <td><input name="AreChecked" type="checkbox" value="@item" @onchange="eventArgs => { CHBCheckChanged(item, eventArgs.Value);}" /></td>
+                                <td class="align-middle"><a style="color: #575d5d; font-size: small">@String.Format("{0:dd/MM/yyyy}", item.Fecha)</a></td>
+                                <td class="align-middle"><a class="text-info" style="font-size: small">@item.Nombre</a></td>
+                                <td class="align-middle"><a class="text-danger" style="font-size: small">@item.Cantidad</a></td>
+                                <td class="align-middle"><a class="text-success" style="font-size: small">@item.Costo</a></td>
+                                <td>
+                                    <div>
+                                        <mark data-toggle="modal" data-target="#taskModal-edit" @onclick="(() => InicializarObjetoEditInv(item.Id))" class="bg-primary transition-3d-hover" style="cursor:pointer; border-radius:20px 20px 20px 20px; padding-left:5px; color:white"><span class="oi oi-pencil" aria-hidden="true"></span></mark>
+                                        <mark @onclick="(() => Eliminar(item.Id))" class="bg-danger" style="cursor:pointer; border-radius:20px 20px 20px 20px; padding-left:5px; color:white"><span class="oi oi-trash" aria-hidden="true"></span></mark>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+
+<AddInversion DataChanged="@DataChanged" ObjetoAdd="objetoNuevaInv" Token="@Token" />
+<EditInversion DataChanged="@DataChanged" ObjetoEdit="objetoEditInv" Token="@Token" CostoOld="@(objetoEditInv.Costo)" />
+<Paginacion TotaPagesQuantity="totalPageQuantity" CurrentPage="currentPage" Radius="3" SelectedPage="SelectedPage"></Paginacion>
+
+<div class="col-12 mx-md-auto">
+    <div class="card-deck space-top-1 w-100 mx-md-auto justify-content-center mt-4">
+        <div class="my-card col-xl-4 mb-3 admin-border-left-primary admin-shadow">
+            <div class="my-card-body p-3 d-flex justify-content-between">
+                <label>Esta Página</label>
+                <span class="text-primary">@(((double)TotalEstaPag).ToString("C2", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")))</span>
+            </div>
+        </div>
+        <div class="col-xl-2">
+
+        </div>
+        <div class="my-card col-xl-4 mb-3 admin-border-left-success admin-shadow">
+            <div class="my-card-body p-3 d-flex justify-content-between">
+                <label>Total</label>
+                <span class="text-primary">@(((double)TotalGeneral).ToString("C2", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")))</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    private double TotalEstaPag { get; set; }
+    private double TotalGeneral { get; set; }
+    private int totalPageQuantity;
+    private int currentPage = 1;
+    string campoSorteoActual = "Fecha";
+    string ordenSorteoActual = "Desc";
+    Buscar objetoBuscar { get; set; } = new Buscar();
+    ModeloInversion objetoNuevaInv = new ModeloInversion();
+    ModeloInversion objetoEditInv = new ModeloInversion();
+    List<ModeloInversion> listadoInversiones { get; set; } = new List<ModeloInversion>();
+    private string Token { get; set; } = "";
+
+    public MultiTask multi;
+    private List<ModeloInversion> ListadoEliminar { get; set; } = new List<ModeloInversion>();
+
+    private async Task SelectedPage(int page)
+    {
+        currentPage = page;
+        if (string.IsNullOrEmpty(objetoBuscar.Texto))
+        {
+            await LoadItems(page);
+        }
+        else
+        {
+            await Buscar(objetoBuscar.Texto, page);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Token = await JS.GetFromLocalStorage("TOKENKEY");
+        await LoadItems();
+    }
+
+    async Task LoadItems(int page = 1, int quantityPerPage = 5, string campoSorteo = "Fecha", string ordenSorteo = "Desc")
+    {
+        totalPageQuantity = (await inversionService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, string.Empty, campoSorteo, ordenSorteo)).CantPorPag;
+        listadoInversiones = (await inversionService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, string.Empty, campoSorteo, ordenSorteo)).ListaObjetos.ToList();
+        await CalcularTotal();
+    }
+
+    private async Task CalcularTotal()
+    {
+        TotalEstaPag = 0;
+        TotalGeneral = 0;
+        foreach (var item in listadoInversiones)
+        {
+            TotalEstaPag += item.Costo;
+        }
+        var listado = await inversionService.Get();
+        foreach (var item in listado)
+        {
+            TotalGeneral += item.Costo;
+        }
+    }
+
+    private async Task Buscar(string texto, int page = 1)
+    {
+        int quantityPerPage = 5;
+        totalPageQuantity = (await inversionService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, texto, "Fecha", "Desc")).CantPorPag;
+        listadoInversiones = (await inversionService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, texto, "Fecha", "Desc")).ListaObjetos.ToList();
+    }
+
+    private string IndicadorOrden(string campoSorteo)
+    {
+        if (campoSorteo.Equals(campoSorteoActual))
+        {
+            return ordenSorteoActual.Equals("Asc") ? "oi oi-arrow-top" : "oi oi-arrow-bottom";
+        }
+        return string.Empty;
+    }
+
+    private async Task Ordenar(string campoSorteo)
+    {
+        if (campoSorteo.Equals(campoSorteoActual))
+        {
+            ordenSorteoActual = ordenSorteoActual.Equals("Asc") ? "Desc" : "Asc";
+        }
+        else
+        {
+            campoSorteoActual = campoSorteo;
+            ordenSorteoActual = "Asc";
+        }
+        await LoadItems(1, 5, campoSorteoActual, ordenSorteoActual);
+    }
+
+    private void InicializarObjetoAddInversion()
+    {
+        objetoNuevaInv = new ModeloInversion();
+    }
+
+    private void InicializarObjetoEditInv(int id)
+    {
+        var objedit = listadoInversiones.First(x => x.Id == id);
+        objetoEditInv = new ModeloInversion() { Id = objedit.Id, Nombre = objedit.Nombre, Fecha = objedit.Fecha, Cantidad = objedit.Cantidad, Costo = objedit.Costo };
+    }
+
+    private async Task Eliminar(int id)
+    {
+        var seleccionado = listadoInversiones.First(x => x.Id == id);
+        if (await JS.Confirm("Eliminar", "Esta acción no es retornable"))
+        {
+            await tallerService.AumentarBalance(seleccionado.Costo, Token);
+            await inversionService.Delete(seleccionado.Id, Token);
+        }
+        await LoadItems(currentPage);
+    }
+
+    private async Task EliminarMultiple()
+    {
+        if (ListadoEliminar.Count > 0)
+        {
+            if (await JS.Confirm("Eliminar", "Esta acción no es retornable"))
+            {
+                await tallerService.AumentarBalanceMultiple(null, ListadoEliminar, Token);
+                await inversionService.DeleteMultiple(ListadoEliminar, Token);
+                ListadoEliminar.Clear();
+                navi.NavigateTo("/inversiones", true);
+            }
+            await LoadItems(currentPage);
+        }
+    }
+
+    private async Task CHBCheckChanged(ModeloInversion item, object checkValue)
+    {
+        if ((bool)checkValue)
+        {
+            ListadoEliminar.Add(item);
+        }
+        else
+        {
+            ListadoEliminar.Remove(item);
+        }
+        if (ListadoEliminar.Count > 0)
+        {
+            multi.Activate();
+        }
+        else
+        {
+            multi.Deactivate();
+        }
+    }
+
+    private async void DataChanged()
+    {
+        await LoadItems(currentPage);
+        StateHasChanged();
+    }
+
+}

@@ -1,0 +1,96 @@
+﻿@page "/admin/logs"
+@inject ILogService logsService
+@inject IJSRuntime JS
+@attribute [Authorize(Roles = "Admin")]
+
+<div class="container space-1">
+    <div class="mb-4">
+        <h1 class="h3 text-primary font-weight-normal mb-0">Opciones de <span class="font-weight-semi-bold">administración</span></h1>
+        <p>Administra las funciones de la web.</p>
+    </div>
+    <div class="col-md-12">
+        <div class="row">
+            <div class="col-md-3 w-md-75 w-lg-40 mx-md-auto mb-3 pt-4 pr-5">
+                <AdminNavPag ItemActive="Logs" />
+            </div>
+
+            <div class="col-md-9 w-md-75 w-lg-40 mx-md-auto">
+                <div class="table-responsive-sm">
+
+                    @if (listado.Count.Equals(0))
+                    {
+                        <p class="text-danger" style="text-align: center">N/A</p>
+                    }
+                    else
+                    {
+                        <table class="table table-light">
+                            <thead>
+                                <tr style="font-size: small; color: white; background-image: linear-gradient(182deg, rgb(8, 38, 123) 0%, #4f1056 90%);">
+                                    <th>Fecha</th>
+                                    <th>Usuario</th>
+                                    <th>Acción</th>
+                                    <th>Descripción</th>
+                                </tr>
+                            </thead>
+                            <tbody class="font-size-1" style="font-family: 'Arial Rounded MT'">
+                                @foreach (var item in listado)
+                                {
+                                <tr class="my-transition-3d-hover">
+                                    <td class="align-middle"><a style="color: #575d5d; font-size: small">@String.Format("{0:dd/MM/yyyy}", item.Fecha)</a></td>
+                                    <td class="align-middle"><a class="text-danger" style="font-size: small">@item.UserName</a></td>
+                                    <td class="align-middle"><a style="color: #575d5d; font-size: small">@item.Action</a></td>
+                                    @switch (item.Action)
+                                    {
+                                        case "Añadir Servicio":
+                                            <td class="align-middle"><a class="text-info" style="font-size: small" href="/servicios/ver-servicio?id=@item.Description">Ver Servicio</a></td>
+                                            break;
+                                        case "Actualizado Servicio":
+                                            <td class="align-middle"><a class="text-info" style="font-size: small" href="/servicios/ver-servicio?id=@item.Description">Ver Servicio</a></td>
+                                            break;
+                                        default:
+                                            <td class="align-middle"><a class="text-info" style="font-size: small">@item.Description</a></td>
+                                            break;
+                                    }
+                                </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+                <Paginacion TotaPagesQuantity="totalPageQuantity" CurrentPage="currentPage" Radius="3" SelectedPage="SelectedPage"></Paginacion>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+
+@code {
+
+    private int totalPageQuantity;
+    private int currentPage = 1;
+    private string Token { get; set; } = "";
+    private List<Log> listado = new List<Log>();
+
+    protected async override Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        Token = await JS.GetFromLocalStorage("TOKENKEY");
+        await LoadItems();
+        StateHasChanged();
+    }
+
+    async Task LoadItems(int page = 1, int quantityPerPage = 7, string campoSorteo = "Fecha", string ordenSorteo = "Desc")
+    {
+        totalPageQuantity = (await logsService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, string.Empty, campoSorteo, ordenSorteo)).CantPorPag;
+        listado = (await logsService.GetPag(new Pagination() { Page = page, QuantityPerPage = quantityPerPage }, string.Empty, campoSorteo, ordenSorteo)).ListaObjetos.ToList();
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        currentPage = page;
+        await LoadItems(page);
+    }
+
+}

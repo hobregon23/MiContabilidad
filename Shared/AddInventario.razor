@@ -1,0 +1,178 @@
+﻿@inject IJSRuntime JS
+@inject IInventarioServicio inventarioService
+@inject ITallerService tallerService
+
+<div class="modal" tabindex="-1" data-backdrop="static" role="dialog" id="taskModal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@ObjetoAddProd" OnValidSubmit="@HandleValidSubmit">
+                    <div class="form-group">
+                        <ValidationSummary />
+                        <input type="hidden" @bind-value="@ObjetoAddProd.Id" />
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="taskName">Categoría</label>
+                                <select class="form-control" style="font-weight:bold" @bind="@CatIdString" required>
+                                    @foreach (var item in Categorias)
+                                    {
+                                        <option value="@item.Id">
+                                            @item.Nombre
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="taskName">Marca</label>
+                                <select class="form-control" style="font-weight:bold" @bind="@MarcaIdString" required>
+                                    @foreach (var item in Marcas)
+                                    {
+                                        <option value="@item.Id">
+                                            @item.Nombre
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row" style="padding-top:1em">
+                            <div class="col-md-6">
+                                <label for="taskName">Modelo</label>
+                                <select class="form-control" style="font-weight:bold" @bind="@ModeloIdString" required>
+                                    @foreach (var item in modelosXmarca)
+                                    {
+                                        <option value="@item.Id">
+                                            @item.Nombre
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="taskName">Fecha</label>
+                                <InputDate class="form-control" @bind-Value="@ObjetoAddProd.Fecha" />
+                            </div>
+                        </div>
+                        <div class="row" style="padding-top:1em">
+                            <div class="col-md-6">
+                                <label for="taskName">Cantidad</label>
+                                <InputNumber class="form-control" @bind-Value="@ObjetoAddProd.Cantidad" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="taskName">Costo (unidad)</label>
+                                <InputNumber class="form-control" @bind-Value="@ObjetoAddProd.Costo" />
+                            </div>
+                        </div>
+                        <label for="taskName" style="padding-top:1em">Descripción</label>
+                        <InputText class="form-control" @bind-Value="@ObjetoAddProd.Descripcion" />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Agregar</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <DataAnnotationsValidator />
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    [Parameter]
+    public Producto ObjetoAddProd { get; set; }
+
+    [Parameter]
+    public List<Modelo> Modelos { get; set; }
+
+    [Parameter]
+    public List<Marca> Marcas { get; set; }
+
+    [Parameter]
+    public List<Categoria> Categorias { get; set; }
+
+    List<Modelo> modelosXmarca { get; set; } = new List<Modelo>();
+
+    public string CatIdString
+    {
+        get
+        {
+            return ObjetoAddProd.CategoriaId.ToString();
+        }
+        set
+        {
+            ObjetoAddProd.CategoriaId = int.Parse(value);
+        }
+    }
+
+    public string MarcaIdString
+    {
+        get
+        {
+            return ObjetoAddProd.MarcaId.ToString();
+        }
+        set
+        {
+            ObjetoAddProd.MarcaId = int.Parse(value);
+            modelosXmarca = Modelos.Where(x => x.MarcaId.Equals(ObjetoAddProd.MarcaId)).ToList();
+            try
+            {
+                //como se pone en el select automaticamente el primero lo paso al modeloId sino se queda en 0
+                ObjetoAddProd.ModeloId = modelosXmarca.First().Id;
+            }
+            catch
+            {
+                //
+            }
+
+        }
+    }
+
+    public string ModeloIdString
+    {
+        get
+        {
+            return ObjetoAddProd.ModeloId.ToString();
+        }
+        set
+        {
+            ObjetoAddProd.ModeloId = int.Parse(value);
+        }
+    }
+
+    [Parameter]
+    public Action DataChanged { get; set; }
+    [Parameter]
+    public string Token { get; set; } = "";
+
+    private async Task CloseTaskModal()
+    {
+        await JS.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+    private async Task<bool> ActualizarTaller()
+    {
+        var costoTotal = ObjetoAddProd.Costo * ObjetoAddProd.Cantidad;
+        var resp = await tallerService.RestarBalance(costoTotal, Token);
+        if (resp.ToString().Contains("Bad"))
+            return false;
+
+        return true;
+    }
+
+    private async void HandleValidSubmit()
+    {
+        if (!await ActualizarTaller())
+        {
+            await JS.MostrarMensaje("Error", "El Fondo es insuficiente", IJSExtensions.TipoMensajeSweetAlert.error);
+            return;
+        }
+        await inventarioService.Add(ObjetoAddProd, Token);
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+}

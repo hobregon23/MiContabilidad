@@ -1,0 +1,82 @@
+﻿@page "/admin/editar-fondo"
+@inject ITallerService tallerService
+@inject IJSRuntime JS
+@attribute [Authorize(Roles = "Admin")]
+
+    <div class="container space-1">
+        <div class="w-md-75 w-lg-100 mx-md-auto">
+            <!-- Title -->
+            <div class="mb-4">
+                <h1 class="h3 text-primary font-weight-normal mb-0">Opciones de <span class="font-weight-semi-bold">administración</span></h1>
+                <p>Administra las funciones de la web.</p>
+            </div>
+            <!-- End Title -->
+            <!-- Form Group -->
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="col-md-3 w-md-75 w-lg-40 mx-md-auto mb-3 pt-4 pr-5">
+                        <AdminNavPag ItemActive="Fondo" />
+                    </div>
+
+                    <div class="col-md-9 w-md-75 w-lg-40 mx-md-auto">
+                        <div class="text-center">
+                            <span class="my-card admin-shadow p-2 mb-3" style="text-align: center; width: 200px; display: inline-flex">
+                                <label style="font-family: 'Arial Rounded MT';">Fondo: @(((double)Fondo).ToString("C2", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")))</label>
+                            </span>
+                        </div>
+                        <div class="js-form-message form-group">
+                            <label>Cantidad</label>
+                            <input type="number" class="form-control" @bind-value="@Cantidad" />
+                        </div>
+                        <div style="text-align: end">
+                            <input type="button" class="btn btn-primary transition-3d-hover" value="Sumar" @onclick="@Sumar" />
+                            <input type="button" class="btn btn-warning transition-3d-hover" value="Restar" @onclick="@Restar" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+@code {
+
+    private double Cantidad { get; set; }
+    private double Fondo { get; set; }
+    private string Token { get; set; } = "";
+
+    protected async override Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        Token = await JS.GetFromLocalStorage("TOKENKEY");
+        Fondo = (await tallerService.Get()).Balance;
+        StateHasChanged();
+    }
+
+    private async Task Sumar()
+    {
+        var result = await tallerService.AumentarBalance(Cantidad, Token);
+        if (result.ToString().Contains("Ok"))
+            await JS.MostrarMensaje("Éxito", "Actualizado exitosamente", IJSExtensions.TipoMensajeSweetAlert.success);
+        else if (result.ToString().Contains("Conflict"))
+            await JS.MostrarMensaje("Error", "No tiene los privilegios necesarios", IJSExtensions.TipoMensajeSweetAlert.error);
+        else
+            await JS.MostrarMensaje("Error", "Error! Pruebe otra vez", IJSExtensions.TipoMensajeSweetAlert.error);
+        await OnInitializedAsync();
+    }
+
+    private async Task Restar()
+    {
+        var result = await tallerService.RestarBalance(Cantidad, Token);
+        if (result.ToString().Contains("Ok"))
+            await JS.MostrarMensaje("Éxito", "Actualizado exitosamente", IJSExtensions.TipoMensajeSweetAlert.success);
+        else if (result.ToString().Contains("Conflict"))
+            await JS.MostrarMensaje("Error", "No tiene los privilegios necesarios", IJSExtensions.TipoMensajeSweetAlert.error);
+        else if (result.ToString().Contains("Bad"))
+            await JS.MostrarMensaje("Error", "El Fondo es insuficiente", IJSExtensions.TipoMensajeSweetAlert.error);
+        else
+            await JS.MostrarMensaje("Error", "Error! Pruebe otra vez", IJSExtensions.TipoMensajeSweetAlert.error);
+        await OnInitializedAsync();
+    }
+}
